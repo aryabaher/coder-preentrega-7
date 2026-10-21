@@ -1,0 +1,23 @@
+Clon en limpio en C:\Users\abaher\AppData\Local\Temp\clon-p7-73yc4cof (sin .env, venv nuevo)
+$ git clone --depth 1 https://github.com/aryabaher/coder-preentrega-7.git repo
+Cloning into 'repo'...
+(exit 0)
+$ git log -1 --format=%h %s
+42f0341 Continuar hilos en RedisSaver, separar el worker y medir costo y p95 sin trazas duplicadas
+(exit 0)
+$ git ls-files .env
+
+(exit 0)
+$ py -3.12 -m venv .venv
+
+(exit 0)
+$ C:\Users\abaher\AppData\Local\Temp\clon-p7-73yc4cof\repo\.venv\Scripts\python.exe -m pip install -q -r requirements.txt
+[notice] A new release of pip is available: 25.0.1 -> 26.2.2
+[notice] To update, run: C:\Users\abaher\AppData\Local\Temp\clon-p7-73yc4cof\repo\.venv\Scripts\python.exe -m pip install --upgrade pip
+(exit 0)
+$ C:\Users\abaher\AppData\Local\Temp\clon-p7-73yc4cof\repo\.venv\Scripts\python.exe -m pytest -q --override-ini addopts= -p no:cacheprovider
+    from langchain_community.document_loaders import DirectoryLoader, TextLoader
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+80 passed, 1 warning in 2.88s
+(exit 0)
