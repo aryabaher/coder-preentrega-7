@@ -1,0 +1,29 @@
+Python 3.12.10
+401/key: falta OPENAI_API_KEY en las variables de entorno. Copiá .env.example a .env y cargá la clave. No se reintenta.
+red/timeout: no se pudo hablar con el proveedor del LLM. Detalle: TimeoutError: timed out
+429/cuota: el proveedor limitó las llamadas (rate limit o cuota). Detalle: Exception: rate limit
+Guardia 3.11: Python 3.12+ requerido: app/graph.py usa el alias `type` (PEP 695). Versión actual: 3.11. Creá el venv con `py -3.12 -m venv .venv` (Windows) o `python3.12 -m venv .venv` (Linux/macOS).
+Tarea normal: {'paused': False, 'interrupt': None, 'result': 'En 12 años acumuló 231 días de vacaciones.'}
+Tarea crítica: {'paused': True, 'interrupt': {'reason': 'side-effect tool registrar_ajuste_nomina', 'tool': 'registrar_ajuste_nomina', 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.'}, 'result': None}
+Después de aprobar: False [{'herramienta': 'registrar_ajuste_nomina', 'detalle': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.'}]
+Worker started
+422 query en blanco:
+{"detail":[{"type":"string_too_short","loc":["body","query"],"msg":"String should have at least 1 character","input":"   ","ctx":{"min_length":1}}]}
+404:
+{"detail":"Job not found"}
+Worker started
+503 Redis apagado:
+{"detail":"Redis is unavailable"}
+Worker started
+POST /tasks: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'PENDING'}
+GET en pausa: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'AWAITING_APPROVAL', 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.', 'result': None, 'error': None, 'interrupt': {'tool': 'registrar_ajuste_nomina', 'reason': 'side-effect tool registrar_ajuste_nomina'}}
+404 approve: 404 Job not found
+POST approve: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'RUNNING'}
+GET final: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'DONE', 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.', 'result': 'Ajuste registrado.', 'error': None, 'interrupt': None}
+409: 409 Job is not awaiting approval
+FAILED: {'job_id': '3283319e-fb5e-4be9-8ec2-e68f38b94598', 'status': 'FAILED', 'query': 'hola', 'result': None, 'error': 'corte de prueba', 'interrupt': None}
+git ls-files .env *.sqlite:
+(ninguno)
+git check-ignore .env:
+.gitignore:12:.env	.env
+validacion ok

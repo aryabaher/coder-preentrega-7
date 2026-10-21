@@ -1,0 +1,18 @@
+Phoenix DELETE 204
+5 POST /tasks en 0.320s
+{'job_id': '3d1af373-0172-4774-81f3-3c3ac3413740', 'status': 'PENDING'}
+{'job_id': '5a7c3d68-98df-41f8-ac43-634f1e3f6408', 'status': 'PENDING'}
+{'job_id': 'd22f0b74-c7c1-43b4-9baa-a7903492cc03', 'status': 'PENDING'}
+{'job_id': '5d31f41a-3508-4bda-bfd8-fe2fb21cc52b', 'status': 'PENDING'}
+{'job_id': '2c70041d-1501-498e-937a-78f85ce81a66', 'status': 'PENDING'}
+3d1af373-0172-4774-81f3-3c3ac3413740 DONE error=None
+5a7c3d68-98df-41f8-ac43-634f1e3f6408 DONE error=None
+d22f0b74-c7c1-43b4-9baa-a7903492cc03 DONE error=None
+5d31f41a-3508-4bda-bfd8-fe2fb21cc52b DONE error=None
+2c70041d-1501-498e-937a-78f85ce81a66 DONE error=None
+5 tareas DONE.
+
+Phoenix, proyecto preentrega-7, trazas orquestador:
+latencias 8.234 s, 8.881 s, 9.306 s, 9.612 s, 11.040 s
+p95 10.755 s
+costo por traza 0.000894, 0.000920, 0.001029, 0.001162, 0.001497 USD

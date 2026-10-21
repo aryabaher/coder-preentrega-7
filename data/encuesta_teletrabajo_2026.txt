@@ -1,0 +1,21 @@
+Encuesta de clima sobre teletrabajo 2026 - TechCorp
+
+Ficha de la encuesta. Respondieron 10 personas del área de Desarrollo en septiembre
+de 2026, todas en el esquema híbrido estándar. La encuesta es anónima y tiene una
+sola pregunta abierta: cómo le resulta a cada persona el esquema de teletrabajo.
+
+Comentarios textuales de la encuesta de teletrabajo:
+- "El esquema híbrido me encanta, rindo mejor los días en casa."
+- "El subsidio llega tarde todos los meses y no alcanza para el monitor."
+- "Valoro mucho la flexibilidad horaria, es excelente para mi familia."
+- "La VPN es lenta y se cae en las reuniones largas."
+- "Los días presenciales son útiles para planificar con el equipo."
+- "Me siento aislado algunas semanas, extraño el contacto con el equipo."
+- "Buena experiencia en general, el equipo se coordina bien."
+- "Cambiar el día presencial con 48 horas de aviso es razonable."
+- "Agradezco el subsidio de conectividad, me permitió mejorar mi conexión."
+- "Trabajar desde casa me deja más tiempo para estudiar, estoy contento."
+
+Uso de los resultados. Recursos Humanos presenta el resumen al comité de dirección
+cada trimestre. Los comentarios se publican sin nombre y se agrupan por tema: subsidio,
+conectividad, coordinación del equipo y bienestar.

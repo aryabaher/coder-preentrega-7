@@ -1,0 +1,56 @@
+Política de Vacaciones - TechCorp
+
+Todos los empleados en relación de dependencia directa de TechCorp tienen derecho a
+días de descanso anual pago, calculados según su antigüedad en la empresa.
+
+Los empleados con menos de 5 años de antigüedad acceden a 14 días corridos de vacaciones
+por año calendario. Los empleados con 5 años o más, y hasta 10 años, acceden a 21 días
+corridos. Los empleados con más de 10 años de antigüedad acceden a 28 días corridos.
+
+Las vacaciones deben solicitarse con un mínimo de 30 días de anticipación a través del
+sistema interno de Recursos Humanos, y quedan sujetas a la aprobación del líder de equipo
+directo. No se acumulan más de 5 días de un período al siguiente, salvo autorización
+expresa de Recursos Humanos por motivos operativos.
+
+Durante el mes de diciembre y la primera quincena de enero, TechCorp aplica un régimen
+especial de guardias mínimas para garantizar la continuidad operativa, por lo que las
+solicitudes de vacaciones en ese período están sujetas a un cupo máximo por equipo.
+
+Cálculo de antigüedad. La antigüedad se computa al 31 de diciembre del año en que se
+gozan las vacaciones. Un empleado que cumple 5 años el 15 de marzo tiene derecho a 21
+días corridos en ese mismo año calendario. Un empleado con 4 años y 11 meses sigue en
+el tramo de 14 días hasta que complete los 5 años. El tramo de 28 días se abre el día
+en que se superan los 10 años cumplidos.
+
+Solicitud y aprobación. El pedido se carga en el sistema interno de Recursos Humanos
+con fecha de inicio, fecha de fin y un suplente propuesto. El líder de equipo tiene
+5 días hábiles para aprobar o rechazar. Si no hay respuesta en ese plazo, el pedido
+queda en estado pendiente y no se considera aprobado. Un rechazo debe indicar un
+motivo operativo (cobertura de guardia, cierre de trimestre, incidente en curso).
+
+Fraccionamiento. Se permite fraccionar el período en hasta tres tramos, siempre que
+un tramo tenga al menos 7 días corridos. Los días restantes pueden tomarse en bloques
+de 2 días hábiles o más. No se autorizan vacaciones de un solo día, salvo compensación
+de feriados trabajados previamente registrados.
+
+Acumulación. El saldo no gozado caduca al 31 de marzo del año siguiente, excepto hasta
+5 días que pueden pasarse al período siguiente. Recursos Humanos puede autorizar un
+saldo mayor cuando un proyecto crítico impidió el goce. Esa autorización queda
+documentada en el legajo y no se renueva en forma automática.
+
+Guardias de fin de año. En diciembre y la primera quincena de enero cada equipo publica
+un cupo máximo de personas de vacaciones simultáneas. El cupo no puede dejar al equipo
+por debajo de la guardia mínima definida por el líder. Los pedidos se priorizan por
+antigüedad del saldo pendiente y, a igualdad, por orden de carga en el sistema.
+
+Licencias concurrentes. Las vacaciones no se superponen con licencia por enfermedad ni
+con licencia parental. Si durante el goce surge una licencia médica de más de 3 días
+corridos, los días de vacaciones se reponen contra certificado y se reprograman.
+
+Cese. Al egreso se liquidan los días proporcionales no gozados según el tramo de
+antigüedad vigente a la fecha de desvinculación. No se adelantan vacaciones del
+período siguiente. El empleado debe devolver activos y completar el checklist de
+salida antes del último día hábil.
+
+Consultas. Dudas sobre el tramo aplicable, el saldo o un rechazo se canalizan a
+Recursos Humanos a través del sistema interno, no por correo informal al líder.

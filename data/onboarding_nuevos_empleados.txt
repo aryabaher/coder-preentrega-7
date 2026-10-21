@@ -1,0 +1,58 @@
+Proceso de Onboarding - TechCorp
+
+El proceso de incorporación de nuevos empleados en TechCorp dura 4 semanas y está
+compuesto por tres etapas: inducción general, capacitación específica del rol, y
+acompañamiento con un mentor asignado (buddy).
+
+Durante la primera semana, el nuevo empleado recibe sus credenciales de acceso, el
+equipamiento de trabajo (notebook, accesorios) y participa de una inducción general
+sobre la cultura, valores y estructura organizacional de TechCorp.
+
+Durante las semanas 2 y 3, el empleado recibe capacitación específica de su área junto
+a su líder directo, y comienza a participar de reuniones de equipo como observador.
+
+En la semana 4 se realiza una reunión de cierre de onboarding entre el nuevo empleado,
+su líder y Recursos Humanos, donde se revisan los objetivos del primer trimestre y se
+resuelven dudas pendientes sobre procesos internos.
+
+Antes del día 1. Recursos Humanos confirma la fecha de ingreso, el puesto y el
+equipo. IT reserva el notebook, crea las cuentas y deja el 2FA en estado pendiente
+de activación. El líder nombra al buddy y bloquea en el calendario las sesiones de
+la primera semana. El empleado recibe un mail con el horario de llegada, el piso y
+la lista de documentos a presentar.
+
+Semana 1 — inducción general. Día 1: entrega de credencial física, notebook y kit
+de accesorios; activación de 2FA; recorrido de la oficina. Días 2 a 5: sesiones de
+cultura, valores, organigrama, canales internos y lectura guiada de las políticas
+de vacaciones, teletrabajo y seguridad informática. El buddy acompaña almuerzos y
+la primera reunión de equipo. No se asignan tickets de producción en esta semana.
+
+Semanas 2 y 3 — rol. El líder define un plan de capacitación con lecturas, pair
+programming o shadowing según el área. El empleado entra a las dailies y a la
+planificación como observador, y toma tareas de baja criticidad con revisión del
+buddy. Recursos Humanos chequea a mitad de la semana 3 que las cuentas, el MDM y el
+subsidio de conectividad (si aplica el esquema híbrido) estén activos.
+
+Semana 4 — cierre. La reunión de cierre dura una hora. Se revisan los objetivos del
+primer trimestre, las dudas de procesos y la confirmación del esquema de asistencia
+(híbrido estándar o presencial obligatorio). El buddy sigue disponible 30 días más
+para consultas puntuales, ya sin agenda fija.
+
+Evaluación de la incorporación. Recursos Humanos envía una encuesta de 10 preguntas
+al empleado y otra al líder. Un resultado de insatisfacción en herramientas o en
+claridad del rol abre un plan de 15 días, no un cierre anticipado del período de
+prueba por sí solo.
+
+Periodo de prueba. El onboarding de 4 semanas no reemplaza el período de prueba
+laboral. Las decisiones de continuidad las toma el líder con Recursos Humanos
+según el convenio aplicable y el desempeño en las tareas asignadas desde la
+semana 2.
+
+Excepciones. Ingresos 100% remotos (roles que no requieren oficina) hacen la
+semana 1 por videollamada y reciben el notebook por courier con protocolo de
+activación. Soporte Técnico Nivel 1 y Recepción hacen toda la inducción presencial.
+Si el buddy se ausenta más de una semana, el líder nombra un reemplazo.
+
+Materiales. Las guías de onboarding viven en el sistema interno. No se usan copias
+personales de políticas. Cualquier cambio de fecha de ingreso posterior a la
+creación de cuentas se informa a IT el mismo día para no dejar accesos huérfanos.

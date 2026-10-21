@@ -1,0 +1,60 @@
+Política de Seguridad Informática - TechCorp
+
+Todo empleado con acceso a sistemas internos de TechCorp debe utilizar autenticación
+de dos factores (2FA) en las plataformas corporativas de correo, repositorios de código
+y sistemas de gestión interna, sin excepción.
+
+Las contraseñas deben tener un mínimo de 12 caracteres, combinando mayúsculas,
+minúsculas, números y símbolos, y deben renovarse cada 90 días. Está prohibido
+reutilizar contraseñas de servicios personales en sistemas corporativos.
+
+Ante la sospecha de un incidente de seguridad (phishing, acceso no autorizado, pérdida
+de un dispositivo corporativo), el empleado debe notificar de inmediato al área de
+Seguridad de la Información a través del canal interno de incidentes, dentro de las
+primeras 2 horas de detectado el evento.
+
+El uso de dispositivos personales para acceder a sistemas corporativos (BYOD) requiere
+la instalación previa del perfil de gestión de dispositivos móviles (MDM) provisto por
+el área de IT.
+
+Alcance del 2FA. El segundo factor puede ser una aplicación de autenticación aprobada
+o una llave de seguridad hardware. No se acepta el SMS como único segundo factor en
+cuentas con acceso a repositorios o a datos de clientes. IT deshabilita la cuenta
+si el 2FA permanece pendiente más de 48 horas desde el alta.
+
+Gestión de contraseñas. Se recomienda un gestor de contraseñas corporativo. Está
+prohibido compartir credenciales por chat, correo o documentos compartidos. Las
+cuentas de servicio se emiten a nombre de un responsable y se rotan cada 90 días
+igual que las cuentas personales. El historial impide reutilizar las últimas 8
+contraseñas.
+
+Incidentes. El canal interno de incidentes es el único medio válido para abrir un
+ticket de seguridad. No se reenvían capturas de phishing a listas de correo generales.
+La notificación dentro de las 2 horas aplica también en días de teletrabajo y en
+guardias. Seguridad de la Información clasifica el evento y puede pedir el aislamiento
+inmediato del equipo.
+
+Pérdida de dispositivo. Notebook, teléfono o token perdido se reporta como incidente.
+IT ejecuta borrado remoto si el equipo tiene el perfil MDM. Hasta que se confirme el
+borrado, se revocan sesiones y se rotan las credenciales del usuario.
+
+BYOD. Sin perfil MDM no hay correo corporativo ni VPN en el teléfono personal. El
+perfil puede exigir cifrado, PIN y la posibilidad de borrado selectivo del contenedor
+de trabajo. TechCorp no accede a fotos ni chats personales fuera de ese contenedor.
+
+VPN y red. El acceso a repositorios y a paneles internos fuera de la oficina se hace
+por VPN. Está prohibido desactivar el cortafuegos local o instalar software no
+aprobado. Las extensiones del navegador se limitan al catálogo publicado por IT.
+
+Datos de clientes. Está prohibido copiar bases, exportaciones o tickets a unidades
+personales, WhatsApp o correo no corporativo. Las pruebas se hacen con datos
+anonimizados. Quien necesite un extracto para un proveedor firma un acuerdo de
+confidencialidad canalizado por Legal.
+
+Auditoría. IT puede revisar logs de acceso, fallos de 2FA y transferencias anómalas.
+Un incumplimiento grave (reenvío de credenciales, deshabilitar MDM, ocultar un
+incidente) habilita la suspensión de accesos mientras Recursos Humanos evalúa el caso.
+
+Capacitación. Cada empleado completa el curso anual de phishing y el de manejo de
+incidentes antes de renovar accesos privilegiados. El recordatorio sale 30 días
+antes del vencimiento.

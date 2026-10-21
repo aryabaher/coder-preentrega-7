@@ -1,0 +1,40 @@
+Política de Teletrabajo - TechCorp
+
+TechCorp adopta un esquema de trabajo híbrido para todas las áreas cuyas funciones no
+requieran presencia física obligatoria. El esquema estándar es de 3 días de trabajo
+remoto y 2 días de trabajo presencial por semana, coordinados con el líder de equipo.
+
+Los empleados deben contar con una conexión a internet estable de al menos 20 Mbps y
+un espacio de trabajo adecuado. TechCorp ayuda con esos gastos mediante el subsidio
+que se describe más abajo, sujeto a la presentación de comprobantes.
+
+Subsidio mensual de home office. El subsidio es de $25.000 por persona y por mes:
+$15.000 para conectividad y $10.000 para periféricos (auriculares, teclado, monitor).
+Lo cobra cada persona del esquema híbrido estándar durante los 12 meses del año,
+también en los meses de vacaciones. Soporte Técnico Nivel 1 y Recepción no lo cobran
+porque trabajan en esquema presencial.
+
+Rendición del subsidio. Se rinde con factura a nombre del empleado o de TechCorp,
+según indique Administración. Un mes sin comprobantes no se paga en forma retroactiva
+más allá de 30 días. TechCorp no cubre alquiler de coworking ni mudanzas.
+
+Durante los días de trabajo remoto, se espera que el empleado esté disponible en el
+horario laboral habitual (9 a 18 hs) y responda a las comunicaciones internas dentro
+de una hora en ese rango, salvo que esté en una reunión marcada en el calendario.
+Más de tres incidentes de inasistencia digital en un mes disparan una revisión del
+esquema con el líder y Recursos Humanos.
+
+Las áreas de Soporte Técnico Nivel 1 y Recepción mantienen un esquema 100% presencial
+por la naturaleza de sus funciones. Otras funciones pueden declararse presenciales
+por el líder cuando el rol exige manipulación de hardware o guardia de sala de
+servidores. Esa declaración se revisa cada semestre.
+
+Días presenciales. Los dos días en oficina se acuerdan con el líder al inicio de cada
+trimestre. El equipo debe coincidir al menos un día común para reuniones de
+planificación. Cambios de día presencial se piden con 48 horas de anticipación, salvo
+incidente de fuerza mayor. No se autoriza un esquema 5 días remoto de forma permanente.
+
+Seguridad en remoto. El acceso a sistemas internos desde la casa usa la VPN
+corporativa y cumple la política de seguridad informática: 2FA, equipo con perfil
+de gestión y bloqueo de pantalla. Está prohibido trabajar desde redes públicas
+sin VPN.

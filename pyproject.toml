@@ -1,0 +1,15 @@
+[project]
+name = "coder-preentrega-7"
+version = "1.0.0"
+description = "API asíncrona del orquestador multi-agente, con Redis, Phoenix y aprobación humana."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra -q"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+exclude = ["^\\.venv/"]
