@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from redis.exceptions import RedisError
 
@@ -95,6 +95,15 @@ def skip_api_spans(scope: MutableMapping[str, Any]) -> bool:
 
 app = FastAPI(lifespan=lifespan, telemetry={"exclude": skip_api_spans})
 app.include_router(hitl.router)
+
+
+@app.middleware("http")
+async def json_charset(request: Request, call_next: Any) -> Response:
+    # Windows PowerShell 5.1 decodes JSON without a charset as Latin-1 and breaks accented text.
+    response: Response = await call_next(request)
+    if response.headers.get("content-type") == "application/json":
+        response.headers["content-type"] = "application/json; charset=utf-8"
+    return response
 
 
 @app.post("/tasks", response_model=TaskResponse)

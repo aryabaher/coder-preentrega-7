@@ -5,13 +5,13 @@ configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
 testpaths: tests
 plugins: anyio-4.15.1, arize-phoenix-client-3.5.0, langsmith-0.14.11, platformdirs-4.13.5, asyncio-1.4.0
 asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 80 items
+collected 81 items
 
-tests\test_api.py ............                                           [ 15%]
+tests\test_api.py .............                                          [ 16%]
 tests\test_contrato.py ................                                  [ 35%]
-tests\test_costo.py ......                                               [ 42%]
-tests\test_errores.py .............                                      [ 58%]
-tests\test_grafo.py ........                                             [ 68%]
+tests\test_costo.py ......                                               [ 43%]
+tests\test_errores.py .............                                      [ 59%]
+tests\test_grafo.py ........                                             [ 69%]
 tests\test_hilos.py .......                                              [ 77%]
 tests\test_hitl.py ....                                                  [ 82%]
 tests\test_observabilidad.py ......                                      [ 90%]
@@ -24,4 +24,4 @@ rag.py:10
     from langchain_community.document_loaders import DirectoryLoader, TextLoader
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 80 passed, 1 warning in 2.52s ========================
+======================== 81 passed, 1 warning in 1.54s ========================

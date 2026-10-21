@@ -237,6 +237,19 @@ def test_http_job_inexistente_y_body_invalido(redis: RedisFalso) -> None:
         assert aprobar.json() == {"detail": "Job not found"}
 
 
+def test_las_respuestas_json_declaran_utf8(redis: RedisFalso) -> None:
+    pregunta = "¿Cuántos días de vacaciones corresponden con 5 años de antigüedad?"
+    with TestClient(app) as cliente:
+        creado = cliente.post("/tasks", json={"query": pregunta})
+        leido = cliente.get(f"/tasks/{creado.json()['job_id']}")
+        faltante = cliente.get("/tasks/inventado")
+        invalido = cliente.post("/tasks", json={})
+    for respuesta in (creado, leido, faltante, invalido):
+        assert respuesta.headers["content-type"] == "application/json; charset=utf-8"
+    assert leido.content.decode("utf-8").count("¿Cuántos días") == 1
+    assert leido.json()["query"] == pregunta
+
+
 class _RedisQueSeCae(RedisFalso):
     """Responde al arrancar y después se cae, como un Redis que se apaga con la API levantada."""
 

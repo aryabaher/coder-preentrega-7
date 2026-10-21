@@ -99,9 +99,13 @@ py -3.11 main.py
 **Windows (PowerShell):**
 
 ```powershell
-curl.exe -X POST localhost:8000/tasks -H "Content-Type: application/json" -d "{\"query\": \"¿Cuántos días de vacaciones corresponden con 5 años de antigüedad?\"}"
-curl.exe localhost:8000/tasks/<job_id>
+$body = @{ query = "¿Cuántos días de vacaciones corresponden con 5 años de antigüedad?" } | ConvertTo-Json
+$task = Invoke-RestMethod -Method Post -Uri http://localhost:8000/tasks -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($body))
+$task
+Invoke-RestMethod http://localhost:8000/tasks/$($task.job_id)
 ```
+
+En PowerShell, `Invoke-RestMethod` arma el JSON sin pelear con las comillas, y el cuerpo va como bytes UTF-8 para que los acentos lleguen bien. Repetí la última línea hasta ver `DONE`. Con `curl.exe` y el JSON entre comillas dobles no funciona: en PowerShell la barra invertida no escapa comillas (ver "JSON cortado en PowerShell" en Errores).
 
 **Linux/macOS:**
 
@@ -114,7 +118,17 @@ El POST vuelve enseguida con `job_id`, `thread_id` y `"status": "PENDING"`. El G
 
 ## Hilos de conversación
 
-Para seguir una conversación, mandá el `thread_id` de una tarea anterior:
+Para seguir una conversación, mandá el `thread_id` de una tarea anterior.
+
+**Windows (PowerShell)**, con `$task` del ejemplo anterior:
+
+```powershell
+$body = @{ query = "¿Y cuántos días acumula en total en esos 5 años?"; thread_id = $task.thread_id } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:8000/tasks -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($body))
+(Invoke-RestMethod http://localhost:8000/threads/$($task.thread_id)).messages
+```
+
+**Linux/macOS:**
 
 ```bash
 curl -X POST localhost:8000/tasks -H "Content-Type: application/json" -d '{"query": "¿Y cuántos días acumula en total en esos 5 años?", "thread_id": "<thread_id>"}'
@@ -171,8 +185,16 @@ Hay dos razones para pausar:
 - **Efecto secundario.** Si la consulta pide registrar un ajuste de nómina, el supervisor manda al nodo `aprobacion` antes de `register_payroll_adjustment`. El GET pasa a `AWAITING_APPROVAL` y el `interrupt` dice `"reason": "side-effect tool register_payroll_adjustment"`.
 - **Costo muy alto.** Cada nodo suma los tokens que gastó (`get_usage_metadata_callback`). Si el costo estimado con el precio de `gpt-4o-mini` pasa `COSTO_MAXIMO_USD` (por defecto 0,01 USD), el supervisor pausa con `"reason": "estimated cost above COSTO_MAXIMO_USD"`, `estimated_cost_usd` y `limit_usd`.
 
+**Windows (PowerShell):**
+
 ```powershell
-curl.exe -X POST localhost:8000/tasks/<job_id>/approve -H "Content-Type: application/json" -d "{\"approved\": true}"
+Invoke-RestMethod -Method Post -Uri http://localhost:8000/tasks/<job_id>/approve -ContentType "application/json" -Body '{"approved": true}'
+```
+
+**Linux/macOS:**
+
+```bash
+curl -X POST localhost:8000/tasks/<job_id>/approve -H "Content-Type: application/json" -d '{"approved": true}'
 ```
 
 El endpoint está en `app/hitl.py`, junto al nodo. Con `approved: true`, el grafo reanuda: corre la herramienta, o sigue trabajando si la pausa fue por costo. Con `approved: false`, reanuda y cierra sin el paso pausado, y la respuesta final dice que se rechazó. El approve también vuelve al instante, con `"status": "RUNNING"`.
@@ -235,6 +257,19 @@ ModuleNotFoundError: No module named 'fastapi'
 Cómo reproducirlo: abrir una terminal nueva en la carpeta del repo y correr `python main.py` sin activar el venv.
 
 Solución: activar el venv en esa terminal (`.\.venv\Scripts\Activate.ps1` o `source .venv/bin/activate`), o llamar al intérprete del venv directo, con `.\.venv\Scripts\python.exe main.py`.
+
+### JSON cortado en PowerShell
+
+Mensaje, al usar `curl.exe` con el JSON entre comillas dobles y `\"`:
+
+```text
+{"detail":[{"type":"json_invalid","loc":["body",1],"msg":"JSON decode error","input":{},"ctx":{"error":"Expecting property name enclosed in double quotes"}}]}curl: (3) URL rejected: Malformed input to a URL function
+curl: (6) Could not resolve host: de
+```
+
+En PowerShell la barra invertida no escapa comillas. La cadena `"{\"query\": ...}"` se corta en la segunda comilla, la API recibe un JSON roto (422) y curl toma cada palabra que sobra como una URL. Solución: los ejemplos de PowerShell de este README, con `Invoke-RestMethod`.
+
+Las respuestas declaran `Content-Type: application/json; charset=utf-8`. Sin el `charset`, Windows PowerShell 5.1 lee la respuesta como Latin-1 y muestra `dÃ­as` en vez de `días`. Lo cubre `tests/test_api.py::test_las_respuestas_json_declaran_utf8`.
 
 ### 401/key
 
@@ -397,7 +432,7 @@ Cómo reproducirlo: `python -m pytest tests/test_errores.py::test_provider_inval
 | Archivo | Qué muestra |
 | --- | --- |
 | `evidencias/01-validacion.txt` | Sin clave y sin Redis: 401/key, 429, red/timeout, guardia 3.11, dos turnos en un hilo, pausa por costo, pausa por efecto secundario con approve, 404, 409, 422, 503, `FAILED`, un job huérfano y Redis caído al arrancar. `git ls-files` no lista `.env`. |
-| `evidencias/02-pytest.txt` | 80 passed. |
+| `evidencias/02-pytest.txt` | 81 passed. |
 | `evidencias/03-python-311.txt` | `py -3.11 main.py` corta con el mensaje de la guardia. |
 | `evidencias/04-carga.txt` | Los 5 POST concurrentes: vuelven en 0,32 s y terminan los cinco en `DONE`. |
 | `evidencias/05-metricas.txt` | Lo que calculó Phoenix: p95, costo por ejecución, y tokens y latencia por nodo. |
