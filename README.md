@@ -123,7 +123,7 @@ Para seguir una conversación, mandá el `thread_id` de una tarea anterior.
 **Windows (PowerShell)**, con `$task` del ejemplo anterior:
 
 ```powershell
-$body = @{ query = "¿Y cuántos días acumula en total en esos 5 años?"; thread_id = $task.thread_id } | ConvertTo-Json
+$body = @{ query = "¿Y cuántos días acumula en total un empleado en sus primeros 12 años?"; thread_id = $task.thread_id } | ConvertTo-Json
 Invoke-RestMethod -Method Post -Uri http://localhost:8000/tasks -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($body))
 (Invoke-RestMethod http://localhost:8000/threads/$($task.thread_id)).messages
 ```
@@ -131,7 +131,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8000/tasks -ContentType "ap
 **Linux/macOS:**
 
 ```bash
-curl -X POST localhost:8000/tasks -H "Content-Type: application/json" -d '{"query": "¿Y cuántos días acumula en total en esos 5 años?", "thread_id": "<thread_id>"}'
+curl -X POST localhost:8000/tasks -H "Content-Type: application/json" -d '{"query": "¿Y cuántos días acumula en total un empleado en sus primeros 12 años?", "thread_id": "<thread_id>"}'
 curl localhost:8000/threads/<thread_id>
 ```
 
@@ -166,15 +166,17 @@ Estos números corresponden a la corrida de `evidencias/04-carga.txt`, leídos d
 | Métrica | Valor (calculado por Phoenix) |
 | --- | --- |
 | Trazas | 5, una por ejecución |
-| Latencia p95 | 11,24 s (p50 9,49 s, p99 11,59 s) |
-| Costo por ejecución | 0,000448 a 0,000794 USD, con una media de 0,000591 USD |
-| Costo de la corrida | 0,002953 USD: 13847 tokens de entrada y 1764 de salida |
+| Latencia p95 | 9,07 s (p50 7,68 s, p99 9,33 s) |
+| Costo por ejecución | 0,000359 a 0,000642 USD, con una media de 0,000470 USD |
+| Costo de la corrida | 0,002349 USD: 13005 tokens de entrada y 1320 de salida |
 
-Por nodo, el investigador gasta el 52% de los tokens (8161) y el 39% de la latencia de nodos. Hace modelo, búsqueda híbrida y modelo, y los fragmentos de política que recupera entran como contexto. El supervisor es el segundo, con el 34% de los tokens y el 35% de la latencia: corre 13 veces en 5 ejecuciones, porque decide antes y después de cada especialista. El analista solo interviene cuando la pregunta pide una cuenta (3 de 5 veces) y gasta el 5%.
+Las cinco respuestas están en `evidencias/04-carga.txt`. La de los 12 años da 231 días (`5*14 + 5*21 + 2*28`), y las otras cuatro responden el dato de la política, sin cuentas.
+
+Por nodo, el investigador gasta el 57% de los tokens (8231) y el 46% de la latencia de nodos. Hace modelo, búsqueda híbrida y modelo, y los fragmentos de política que recupera entran como contexto. El supervisor es el segundo, con el 31% de los tokens y el 32% de la latencia: corre 11 veces en 5 ejecuciones, porque decide antes y después de cada especialista. El analista interviene solo cuando la pregunta pide una cuenta ("total", "acumul", "calcul", "suma"...): 1 de 5 veces, con el 4% de los tokens. Recibe la pregunta del turno junto con los datos del equipo, y arma la cuenta por tramos como suma de productos.
 
 Lo que más bajaría costo y p95 es achicar el contexto del investigador (menos fragmentos o fragmentos más cortos) y ahorrar la primera decisión del supervisor. Sin aportes, la guarda ya obliga a buscar antes de cerrar, así que esa llamada casi nunca cambia la ruta.
 
-Con el compose, la misma corrida dio un p95 de 13,97 s (`evidencias/08-compose.txt`).
+Con el compose, la misma corrida dio un p95 de 10,63 s y las mismas cinco respuestas (`evidencias/08-compose.txt`).
 
 Una corrección que se ve en los números: con `OpenAIInstrumentor` y `LangChainInstrumentor` juntos, cada llamada aparecía dos veces, como `ChatOpenAI` y como `ChatCompletion`, y Phoenix duplicaba los tokens y el costo. Por eso `app/observability.py` instrumenta solo LangChain. `tests/test_observabilidad.py::test_langchain_instrumentado_y_openai_no` lo exige.
 
@@ -432,12 +434,12 @@ Cómo reproducirlo: `python -m pytest tests/test_errores.py::test_provider_inval
 | Archivo | Qué muestra |
 | --- | --- |
 | `evidencias/01-validacion.txt` | Sin clave y sin Redis: 401/key, 429, red/timeout, guardia 3.11, dos turnos en un hilo, pausa por costo, pausa por efecto secundario con approve, 404, 409, 422, 503, `FAILED`, un job huérfano y Redis caído al arrancar. `git ls-files` no lista `.env`. |
-| `evidencias/02-pytest.txt` | 81 passed. |
+| `evidencias/02-pytest.txt` | 90 passed. |
 | `evidencias/03-python-311.txt` | `py -3.11 main.py` corta con el mensaje de la guardia. |
-| `evidencias/04-carga.txt` | Los 5 POST concurrentes: vuelven en 0,32 s y terminan los cinco en `DONE`. |
+| `evidencias/04-carga.txt` | Los 5 POST concurrentes: vuelven en 0,32 s y terminan los cinco en `DONE`, con la pregunta y la respuesta de cada uno. |
 | `evidencias/05-metricas.txt` | Lo que calculó Phoenix: p95, costo por ejecución, y tokens y latencia por nodo. |
 | `evidencias/06-hitl.txt` | API real: una tarea crítica pasa por `AWAITING_APPROVAL`, se aprueba y se registra. Otra se rechaza y no se registra. |
-| `evidencias/07-redis.txt` | Un hilo de dos turnos, las claves `checkpoint:*` del hilo en Redis, el reinicio de la API, el historial recuperado y un approve después del reinicio. |
+| `evidencias/07-redis.txt` | Un hilo de dos turnos (el seguimiento usa los tramos del turno 1 y da 231), las claves `checkpoint:*` del hilo en Redis, el reinicio de la API, el historial recuperado y un approve después del reinicio. |
 | `evidencias/08-compose.txt` | `docker compose`: la API con `WORKER_IN_API=0`, el worker con `python -m app.worker`, los 5 POST y las métricas de su Phoenix. |
 | `evidencias/09-clon-limpio.txt` | `git clone` de `main` en una carpeta temporal, venv, `pip install -r requirements.txt` y `pytest`. |
 
@@ -445,12 +447,12 @@ Cómo reproducirlo: `python -m pytest tests/test_errores.py::test_provider_inval
 
 | Archivo | Qué muestra |
 | --- | --- |
-| `screenshots/01-trazas.png` | Una traza `orquestador`, con los spans de supervisor (`ChatOpenAI`) e investigador (modelo, herramienta, BM25 y vectorial). |
+| `screenshots/01-trazas.png` | La traza `orquestador` de la pregunta de los 12 años: supervisor (`ChatOpenAI`) y analista (modelo, `calculadora` y modelo), con la salida de 231 días. |
 | `screenshots/02-costo-por-ejecucion.png` | La tabla Traces: las 5 ejecuciones, cada una con su latencia, total de tokens y total de costo. Phoenix redondea los costos menores a un centavo a `<$0.01`. |
-| `screenshots/02b-costo-por-ejecucion-phoenix.png` | El mismo costo sin redondear, como lo devuelve el endpoint GraphQL de Phoenix: 5 trazas, `latencyP95Ms` 11239 y el costo de cada una. |
-| `screenshots/03-latencia-p95.png` | Metrics, con solo la serie P95 visible. El tooltip marca `p95 11.24 s`. |
+| `screenshots/02b-costo-por-ejecucion-phoenix.png` | El mismo costo sin redondear, como lo devuelve el endpoint GraphQL de Phoenix: 5 trazas, `latencyP95Ms` 9070 y el costo de cada una. |
+| `screenshots/03-latencia-p95.png` | Metrics, con solo la serie P95 visible. El tooltip marca `p95 9.07 s`. |
 | `screenshots/04-hitl.png` | La traza de un approve: `aprobacion`, `ejecutor` y `register_payroll_adjustment`, con la entrada `approved=True`. |
-| `screenshots/05-sesion.png` | La sesión de un hilo: dos turnos con el mismo `thread_id`. |
+| `screenshots/05-sesion.png` | La sesión de un hilo, con dos turnos y el mismo `thread_id`. El primero devuelve los días por tramo de antigüedad, y el segundo, "¿y en total en 12 años?", usa ese dato para llegar a 231. |
 
 ## Checklist
 

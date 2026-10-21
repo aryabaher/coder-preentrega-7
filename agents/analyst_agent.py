@@ -15,7 +15,11 @@ from state import AgentState
 
 PROMPT_ANALISTA = (
     "Sos un agente de análisis matemático. Tu única función es calcular usando tu "
-    "herramienta a partir de los números que te den. NO busques información nueva."
+    "herramienta a partir de los números que te den. NO busques información nueva. "
+    "Si hay tramos (cantidad de años con cierta cantidad de días por año), armá la expresión "
+    "como suma de productos, años por días de cada tramo, por ejemplo '5*14 + 5*21 + 2*28', "
+    "y verificá antes que los años de los tramos sumen el total de la pregunta. "
+    "Respondé con el resultado y la expresión que usaste."
 )
 
 _OPERADORES = {

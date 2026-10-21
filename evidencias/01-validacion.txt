@@ -9,23 +9,21 @@ Historial del hilo demo: [('human', None), ('ai', 'investigador'), ('ai', 'anali
 Pausa por costo: {'reason': 'estimated cost above COSTO_MAXIMO_USD', 'estimated_cost_usd': 1.0, 'limit_usd': 0.5, 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años?'}
 Costo rechazado, cierra: False
 Worker started
-POST /tasks: {'job_id': '4c85b06f-81c0-46ca-bc87-7f4bc2de973b', 'status': 'PENDING', 'thread_id': '4c85b06f-81c0-46ca-bc87-7f4bc2de973b'}
-POST /tasks mismo hilo: {'job_id': 'cbb5d809-9c13-4f4a-b636-bd5ae2df58f0', 'status': 'PENDING', 'thread_id': '4c85b06f-81c0-46ca-bc87-7f4bc2de973b'}
+POST /tasks: {'job_id': 'ccf318aa-aad5-44bb-8681-a1a9895cd349', 'status': 'PENDING', 'thread_id': 'ccf318aa-aad5-44bb-8681-a1a9895cd349'}
+POST /tasks mismo hilo: {'job_id': '83a3b183-7841-4966-a318-4413a84519f8', 'status': 'PENDING', 'thread_id': 'ccf318aa-aad5-44bb-8681-a1a9895cd349'}
 GET /threads humanos: ['Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años?', '¿Y si en vez de 12 fueran 15 años?']
 404 hilo: 404 Thread not found
 GET en pausa: {"reason": "side-effect tool register_payroll_adjustment", "tool": "register_payroll_adjustment", "query": "Un empleado va a cumplir 12 años en TechCorp. Tuvo 1
 409 hilo ocupado: 409 Thread is busy
-POST approve: {'job_id': '4c4f61e2-7326-416b-af98-beefd8e4a590', 'status': 'RUNNING'}
+POST approve: {'job_id': '1467188a-7be6-451e-8ddc-f7795c16b31a', 'status': 'RUNNING'}
 GET final: DONE efectos: 1
 409 approve: 409 Job is not awaiting approval
 FAILED: FAILED corte de prueba
 Huérfanos recuperados: ['huerfano']
 Huérfano: worker restarted before the job finished
-Worker started
 422 query en blanco: {"detail":[{"type":"string_too_short","loc":["body","query"],"msg":"String should have at least 1 character","input":"   ","ctx":{"min_length":1}}]}
 404 job: {"detail":"Job not found"}
 404 approve: {"detail":"Job not found"}
-Worker started
 503 Redis caído después de arrancar: 503 {"detail":"Redis is unavailable"}
 Redis caído al arrancar: Redis is unavailable at redis://localhost:6379. Start it with: docker run -d --name redis-preentrega-7 -p 6379:6379 redis:8
 git ls-files .env *.sqlite:

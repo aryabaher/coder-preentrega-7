@@ -4,7 +4,7 @@ from langchain_core.messages import AIMessage
 
 from app.graph import costo_estimado, get_graph, limite_costo, medido, resume_graph, run_graph
 
-PREGUNTA = "¿Cuántos días de vacaciones corresponden con 5 años de antigüedad?"
+PREGUNTA = "¿Cuántos días de vacaciones acumula en total un empleado en sus primeros 5 años?"
 
 
 def _config(hilo: str) -> dict:

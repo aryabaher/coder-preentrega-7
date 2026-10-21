@@ -124,6 +124,29 @@ def con_contexto(nodo: Callable[[AgentState], dict[str, Any]]) -> Callable[[Agen
     return envoltura
 
 
+def con_tarea(nodo: Callable[[AgentState], dict[str, Any]]) -> Callable[[AgentState], dict[str, Any]]:
+    """El analista recibe la pregunta del turno y los datos que ya consiguió el equipo.
+
+    Con solo el último mensaje, a veces calcula sin los años de la pregunta o sin los datos de la política.
+    """
+
+    @functools.wraps(nodo)
+    def envoltura(state: AgentState) -> dict[str, Any]:
+        datos = "\n".join(
+            f"- {c['agente']}: {c['aporte']}"
+            for c in state.get("contribuciones", [])
+            if not c["aporte"].startswith(("ERROR", "No se encontró"))
+        )
+        tarea = (
+            f"{conversacion_previa(state['messages'])}"
+            f"Pregunta actual: {latest_question(state['messages'])}\n"
+            f"Datos del equipo:\n{datos or '(todavía ninguno: usá los números de la pregunta)'}"
+        )
+        return nodo({**state, "messages": [*state["messages"], HumanMessage(content=tarea)]})  # type: ignore[typeddict-item]
+
+    return envoltura
+
+
 def conversacion_previa(mensajes: list[BaseMessage]) -> str:
     """Preguntas y respuestas finales de los turnos anteriores del hilo (las últimas TURNOS_DE_CONTEXTO)."""
     pares: list[tuple[str, str]] = []
@@ -205,6 +228,10 @@ def _guardas_equipo(state: AgentState, decision: DecisionSupervisor, pregunta: s
         return DecisionSupervisor(next="FINISH", razon="[guarda] el investigador ya cumplió su parte.")
     if decision.next == "analista" and _cumplio(state, "analista"):
         return DecisionSupervisor(next="FINISH", razon="[guarda] el analista ya cumplió su parte.")
+    if decision.next == "analista" and not _pide_calculo(pregunta):
+        if _cumplio(state, "investigador"):
+            return DecisionSupervisor(next="FINISH", razon="[guarda] no hay una cuenta para hacer: alcanza con el dato.")
+        return DecisionSupervisor(next="investigador", razon="[guarda] no hay una cuenta para hacer: falta el dato.")
     if decision.next != "FINISH":
         return decision
     if "investigador" not in hechos:
@@ -242,9 +269,13 @@ def aplicar_guardas(state: AgentState, decision: DecisionSupervisor, pregunta: s
     return _guarda_critica(state, _guardas_equipo(state, decision, pregunta), pregunta)
 
 
+PALABRAS_DE_CALCULO = ("total", "acumul", "calcul", "suma", "promedio", "diferencia", "multiplic")
+
+
 def _pide_calculo(pregunta: str) -> bool:
+    """True si la pregunta pide una cuenta. "Cuántos" o un número suelto (un legajo, una antigüedad) no alcanzan."""
     texto = pregunta.lower()
-    return any(palabra in texto for palabra in ("cuánto", "cuanto", "cuántos", "cuantos", "total", "acumul", "calcul"))
+    return any(palabra in texto for palabra in PALABRAS_DE_CALCULO)
 
 
 def enrutar(state: AgentState) -> Literal["investigador", "analista", "aprobacion", "ejecutor", "sintesis"]:
@@ -271,12 +302,13 @@ def nodo_sintesis(state: AgentState) -> dict[str, Any]:
         aportes.append("- [aprobacion] La persona rechazó el ajuste de nómina: no se registró.")
     if state.get("cost_approved") is False:
         aportes.append("- [aprobacion] La persona cortó la ejecución por costo: se responde con lo obtenido.")
+    hubo_decision = bool(state.get("side_effect_result")) or False in (state.get("approved"), state.get("cost_approved"))
     previa = conversacion_previa(state["messages"])
     prompt = (
         f"{previa}\nPregunta actual: {latest_question(state['messages'])}\n\nAportes del equipo:\n"
         + "\n".join(aportes)
-        + "\n\nRedactá una respuesta final clara y breve combinando estos aportes. "
-        "Si hubo una acción aprobada o rechazada, decilo."
+        + "\n\nRedactá una respuesta final clara y breve combinando estos aportes. Respondé solo lo que se pregunta."
+        + (" Decí qué decidió la persona sobre la acción pausada." if hubo_decision else "")
     )
     llm = modelo.obtener_llm()
     respuesta_final = modelo.invocar(lambda: llm.invoke(prompt))
@@ -286,7 +318,7 @@ def nodo_sintesis(state: AgentState) -> dict[str, Any]:
 grafo = StateGraph(AgentState)
 grafo.add_node("supervisor", medido(nodo_supervisor))
 grafo.add_node("investigador", medido(con_contexto(nodo_investigador)))
-grafo.add_node("analista", medido(con_contexto(nodo_analista)))
+grafo.add_node("analista", medido(con_tarea(nodo_analista)))
 grafo.add_node("aprobacion", approval_node)
 grafo.add_node("ejecutor", executor_node)
 grafo.add_node("sintesis", medido(nodo_sintesis))

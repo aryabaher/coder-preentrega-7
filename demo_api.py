@@ -19,11 +19,11 @@ from pathlib import Path
 
 import httpx
 
-PREGUNTA = "¿Cuántos días de vacaciones corresponden con 5 años de antigüedad en TechCorp?"
-SEGUIMIENTO = "¿Y cuántos días acumula en total en esos 5 años?"
+PREGUNTA = "¿Cuántos días de vacaciones por año corresponden en TechCorp según la antigüedad?"
+SEGUIMIENTO = "¿Y cuántos días acumula en total un empleado en sus primeros 12 años?"
 CRITICA = (
     "¿Cuántos días de vacaciones corresponden con 5 años de antigüedad? "
-    "Registrá el ajuste de nómina con register_payroll_adjustment para la legajo 1042."
+    "Registrá el ajuste de nómina con register_payroll_adjustment para el legajo 1042."
 )
 PENDIENTE = Path(__file__).with_name(".pausa_pendiente.json")
 

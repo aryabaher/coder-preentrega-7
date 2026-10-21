@@ -76,6 +76,8 @@ async def main() -> None:
     fallos = [item for item in finales if item["status"] != "DONE"]
     for item in finales:
         print(f"{item['job_id']} {item['status']} error={item.get('error')}")
+        print(f"  Q: {item['query']}")
+        print(f"  A: {(item.get('result') or '').replace(chr(10), ' ')[:300]}")
     if fallos:
         raise SystemExit(f"{len(fallos)} tareas en FAILED")
     print("5 tareas DONE. En http://localhost:6006, proyecto preentrega-7:")

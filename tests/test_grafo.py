@@ -1,9 +1,11 @@
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
 from agents.research_agent import nodo_investigador
 from app.graph import (
     MAX_PASOS,
     DecisionSupervisor,
+    _pide_calculo,
     enrutar,
     estado_inicial,
     get_graph,
@@ -79,6 +81,72 @@ def test_delega_busca_calcula_y_sintetiza(dobles: tuple[LLMFalso, EspecialistaFa
     assert investigador.entradas[0]["messages"][0].content == PREGUNTA
     assert "14 días" in analista.entradas[0]["messages"][0].content
     assert "Pregunta actual:" in str(llm.prompts[0])
+
+
+@pytest.mark.parametrize(
+    ("pregunta", "esperado"),
+    [
+        ("¿Cuántos días de vacaciones corresponden con 5 años de antigüedad?", False),
+        ("¿Cuántos días de teletrabajo por semana permite la política de TechCorp?", False),
+        (PREGUNTA, True),
+        ("¿Y cuántos días acumula en total en esos 5 años?", True),
+        ("¿Cuántos días corresponden con 5 años? Registrá el ajuste de nómina para el legajo 1042.", False),
+    ],
+)
+def test_pide_calculo_solo_si_hay_una_cuenta(pregunta: str, esperado: bool) -> None:
+    assert _pide_calculo(pregunta) is esperado
+
+
+def test_una_pregunta_de_dato_no_llama_al_analista(
+    dobles: tuple[LLMFalso, EspecialistaFalso, EspecialistaFalso],
+) -> None:
+    llm, investigador, analista = dobles
+
+    def finish_con_dato(mensajes: list[dict[str, str]], *args: object, **kwargs: object) -> DecisionSupervisor:
+        if "- investigador:" in mensajes[0]["content"]:
+            return DecisionSupervisor(next="FINISH", razon="ya está el dato")
+        return DecisionSupervisor(next="investigador", razon="falta el dato")
+
+    llm.supervisor.invoke = finish_con_dato  # type: ignore[method-assign]
+    salida = _correr("¿Cuántos días de vacaciones corresponden con 5 años de antigüedad?", hilo="dato")
+    assert [c["agente"] for c in salida["contribuciones"]] == ["investigador"]
+    assert analista.entradas == []
+    assert len(investigador.entradas) == 1
+
+
+def test_el_analista_recibe_la_pregunta_y_los_datos(
+    dobles: tuple[LLMFalso, EspecialistaFalso, EspecialistaFalso],
+) -> None:
+    _, _, analista = dobles
+    _correr(hilo="tarea-analista")
+    tarea = analista.entradas[0]["messages"][0].content
+    assert f"Pregunta actual: {PREGUNTA}" in tarea
+    assert "Datos del equipo:\n- investigador: 14 días, 21 días y 28 días." in tarea
+
+
+def test_el_supervisor_no_manda_al_analista_sin_cuenta(
+    dobles: tuple[LLMFalso, EspecialistaFalso, EspecialistaFalso],
+) -> None:
+    llm, _, analista = dobles
+
+    def siempre_analista(mensajes: list[dict[str, str]], *args: object, **kwargs: object) -> DecisionSupervisor:
+        return DecisionSupervisor(next="analista", razon="calcular por las dudas")
+
+    llm.supervisor.invoke = siempre_analista  # type: ignore[method-assign]
+    salida = _correr("¿Cuántos días de vacaciones corresponden al tramo de 5 años de antigüedad?", hilo="sin-cuenta")
+    assert [c["agente"] for c in salida["contribuciones"]] == ["investigador"]
+    assert analista.entradas == []
+
+
+def test_la_sintesis_normal_no_menciona_aprobaciones(
+    dobles: tuple[LLMFalso, EspecialistaFalso, EspecialistaFalso],
+) -> None:
+    llm, _, _ = dobles
+    _correr(hilo="sin-aprobacion")
+    prompt = str(llm.prompts[-1])
+    assert "Respondé solo lo que se pregunta." in prompt
+    assert "acción pausada" not in prompt
+    assert "aprob" not in prompt.lower()
 
 
 def test_el_especialista_recibe_solo_el_ultimo_mensaje(

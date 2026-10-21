@@ -1,15 +1,25 @@
 Phoenix DELETE 204
-5 POST /tasks en 0.318s
-{'job_id': '6dd443e1-2b7d-455e-b7c0-caa9b9cd4772', 'status': 'PENDING', 'thread_id': '6dd443e1-2b7d-455e-b7c0-caa9b9cd4772'}
-{'job_id': '2bbec05b-6b75-4270-a36e-c0c4a9c2f09d', 'status': 'PENDING', 'thread_id': '2bbec05b-6b75-4270-a36e-c0c4a9c2f09d'}
-{'job_id': '24116068-2d7f-43c6-a33b-db23d5ca5420', 'status': 'PENDING', 'thread_id': '24116068-2d7f-43c6-a33b-db23d5ca5420'}
-{'job_id': 'a5175c58-50c6-447c-ac21-2399ede325e4', 'status': 'PENDING', 'thread_id': 'a5175c58-50c6-447c-ac21-2399ede325e4'}
-{'job_id': '67bbb32f-c335-4f58-b1c5-729be0bc1f5a', 'status': 'PENDING', 'thread_id': '67bbb32f-c335-4f58-b1c5-729be0bc1f5a'}
-6dd443e1-2b7d-455e-b7c0-caa9b9cd4772 DONE error=None
-2bbec05b-6b75-4270-a36e-c0c4a9c2f09d DONE error=None
-24116068-2d7f-43c6-a33b-db23d5ca5420 DONE error=None
-a5175c58-50c6-447c-ac21-2399ede325e4 DONE error=None
-67bbb32f-c335-4f58-b1c5-729be0bc1f5a DONE error=None
+5 POST /tasks en 0.323s
+{'job_id': 'f325dfb5-5a85-4543-9d3f-d48bf6f32c56', 'status': 'PENDING', 'thread_id': 'f325dfb5-5a85-4543-9d3f-d48bf6f32c56'}
+{'job_id': 'c1fe8225-a9e8-4724-8d24-33bb503e2038', 'status': 'PENDING', 'thread_id': 'c1fe8225-a9e8-4724-8d24-33bb503e2038'}
+{'job_id': '8fc75c84-288b-4986-b786-d94c1d7e357b', 'status': 'PENDING', 'thread_id': '8fc75c84-288b-4986-b786-d94c1d7e357b'}
+{'job_id': 'e45599f2-b9b1-4bc3-b08f-6550d34ae677', 'status': 'PENDING', 'thread_id': 'e45599f2-b9b1-4bc3-b08f-6550d34ae677'}
+{'job_id': '7e3c6cff-564c-490f-b1c1-a45fe91ccb4c', 'status': 'PENDING', 'thread_id': '7e3c6cff-564c-490f-b1c1-a45fe91ccb4c'}
+f325dfb5-5a85-4543-9d3f-d48bf6f32c56 DONE error=None
+  Q: Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años?
+  A: El empleado acumuló un total de 231 días de vacaciones en esos 12 años, calculado de la siguiente manera: \( 5 \times 14 + 5 \times 21 + 2 \times 28 \).
+c1fe8225-a9e8-4724-8d24-33bb503e2038 DONE error=None
+  Q: ¿Cuántos días de teletrabajo por semana permite la política de TechCorp?
+  A: TechCorp permite 3 días de teletrabajo por semana.
+8fc75c84-288b-4986-b786-d94c1d7e357b DONE error=None
+  Q: ¿Qué tiene que completar una persona nueva durante el onboarding?
+  A: Durante el onboarding en TechCorp, una persona nueva debe completar las siguientes etapas:  1. Inducción general sobre la cultura de la empresa. 2. Capacitación específica del rol. 3. Acompañamiento con un mentor asignado (buddy).  Además, en la primera semana, recibe sus credenciales de acceso y el
+e45599f2-b9b1-4bc3-b08f-6550d34ae677 DONE error=None
+  Q: ¿Cuál es la regla de contraseñas de la política de seguridad informática?
+  A: La regla de contraseñas de la política de seguridad informática de TechCorp establece que las contraseñas deben tener un mínimo de 12 caracteres, combinando mayúsculas, minúsculas, números y símbolos. Deben renovarse cada 90 días, está prohibido reutilizar contraseñas de servicios personales en sist
+7e3c6cff-564c-490f-b1c1-a45fe91ccb4c DONE error=None
+  Q: ¿Cuántos días de vacaciones corresponden al tramo de 5 años de antigüedad?
+  A: Los empleados de TechCorp con 5 años de antigüedad tienen derecho a 21 días corridos de vacaciones por año calendario.
 5 tareas DONE. En http://localhost:6006, proyecto preentrega-7:
 - costo por ejecución: lo calcula Phoenix con los tokens de entrada y salida
 - latencia p95: el percentil de esta corrida, con el proyecto recién borrado

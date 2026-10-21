@@ -38,6 +38,7 @@ def test_aprobar_ejecuta_la_herramienta(dobles) -> None:
     assert valores["side_effect_done"] is True
     assert valores["side_effect_result"].startswith("Adjustment registered:")
     assert "La persona aprobó y se registró el ajuste de nómina" in str(llm.prompts[-1])
+    assert "Decí qué decidió la persona sobre la acción pausada." in str(llm.prompts[-1])
 
 
 def test_rechazar_no_ejecuta_la_herramienta(dobles) -> None:

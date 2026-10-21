@@ -5,16 +5,16 @@ configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
 testpaths: tests
 plugins: anyio-4.15.1, arize-phoenix-client-3.5.0, langsmith-0.14.11, platformdirs-4.13.5, asyncio-1.4.0
 asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 81 items
+collected 90 items
 
-tests\test_api.py .............                                          [ 16%]
-tests\test_contrato.py ................                                  [ 35%]
-tests\test_costo.py ......                                               [ 43%]
-tests\test_errores.py .............                                      [ 59%]
-tests\test_grafo.py ........                                             [ 69%]
-tests\test_hilos.py .......                                              [ 77%]
-tests\test_hitl.py ....                                                  [ 82%]
-tests\test_observabilidad.py ......                                      [ 90%]
+tests\test_api.py .............                                          [ 14%]
+tests\test_contrato.py ................                                  [ 32%]
+tests\test_costo.py ......                                               [ 38%]
+tests\test_errores.py .............                                      [ 53%]
+tests\test_grafo.py .................                                    [ 72%]
+tests\test_hilos.py .......                                              [ 80%]
+tests\test_hitl.py ....                                                  [ 84%]
+tests\test_observabilidad.py ......                                      [ 91%]
 tests\test_requisitos.py ....                                            [ 95%]
 tests\test_worker_proceso.py ....                                        [100%]
 
@@ -24,4 +24,4 @@ rag.py:10
     from langchain_community.document_loaders import DirectoryLoader, TextLoader
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 81 passed, 1 warning in 1.54s ========================
+======================== 90 passed, 1 warning in 1.56s ========================
