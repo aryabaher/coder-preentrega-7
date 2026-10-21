@@ -13,7 +13,6 @@ services:
     image: arizephoenix/phoenix:latest
     ports:
       - "6006:6006"
-      - "4317:4317"
 
   api:
     build: .
@@ -24,6 +23,23 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       PHOENIX_ENDPOINT: http://phoenix:6006/v1/traces
+      WORKER_IN_API: "0"
     depends_on:
       redis:
         condition: service_healthy
+      phoenix:
+        condition: service_started
+
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379
+      PHOENIX_ENDPOINT: http://phoenix:6006/v1/traces
+    depends_on:
+      redis:
+        condition: service_healthy
+      phoenix:
+        condition: service_started

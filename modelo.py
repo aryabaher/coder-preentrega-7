@@ -13,7 +13,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.errors import GraphRecursionError
 
-from app.observability import trazar_llm
+from app.observability import trace_llm
 from errors import ClaveAPIError, ConfiguracionError, CuotaError, OrquestadorError, RedError
 
 MODELO_GOOGLE = "gemini-3.5-flash"
@@ -120,7 +120,7 @@ def clasificar_error(exc: BaseException) -> OrquestadorError:
     return OrquestadorError(f"Error del LLM: {detalle}")
 
 
-@trazar_llm
+@trace_llm
 def invocar(llamada: Callable[[], T], intentos: int = MAX_INTENTOS) -> T:
     """Ejecuta `llamada` y reintenta 429/cuota y red/timeout con backoff (0.5 s, 1 s).
 

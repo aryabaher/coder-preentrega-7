@@ -1,0 +1,21 @@
+Phoenix http://localhost:6006, proyecto preentrega-7
+Trazas en el proyecto: 5
+Latencia de traza calculada por Phoenix: p50 9.49 s, p95 11.24 s, p99 11.59 s
+Costo total calculado por Phoenix: 0.002953 USD (entrada 0.001895, salida 0.001058)
+Tokens: entrada 13847, salida 1764
+
+Costo por ejecución (una traza `orquestador` por job):
+- job 67bbb32f-c335-4f58-b1c5-729be0bc1f5a: 9.51 s, 3220 tokens, 0.000631 USD
+- job 2bbec05b-6b75-4270-a36e-c0c4a9c2f09d: 9.49 s, 3343 tokens, 0.000619 USD
+- job 6dd443e1-2b7d-455e-b7c0-caa9b9cd4772: 11.67 s, 3826 tokens, 0.000794 USD
+- job a5175c58-50c6-447c-ac21-2399ede325e4: 8.07 s, 2657 tokens, 0.000448 USD
+- job 24116068-2d7f-43c6-a33b-db23d5ca5420: 8.76 s, 2565 tokens, 0.000461 USD
+Costo medio por ejecución: 0.000591 USD (n = 5)
+
+Por nodo del grafo (suma de todas las ejecuciones):
+- supervisor: 13 spans, 5257 tokens (34%), 16.45 s (35% de la latencia de nodos)
+- investigador: 5 spans, 8161 tokens (52%), 18.68 s (39% de la latencia de nodos)
+- analista: 3 spans, 805 tokens (5%), 4.76 s (10% de la latencia de nodos)
+- sintesis: 5 spans, 1388 tokens (9%), 7.45 s (16% de la latencia de nodos)
+
+Nodo con más tokens: investigador. Nodo donde se concentra la latencia: investigador.

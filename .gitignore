@@ -12,6 +12,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+.pausa_pendiente.json
 
 Thumbs.db
 Desktop.ini

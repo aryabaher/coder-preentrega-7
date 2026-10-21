@@ -6,7 +6,9 @@ import os
 
 os.environ["TRAZAS_OFFLINE"] = "1"
 os.environ.pop("PINECONE_API_KEY", None)
+os.environ.pop("COSTO_MAXIMO_USD", None)
 
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -15,11 +17,13 @@ from langgraph.checkpoint.memory import MemorySaver
 
 import modelo
 from agents import analyst_agent, research_agent
-from app.graph import DecisionSupervisor, compilar, usar
-from app.hitl import efectos
-from app.observability import iniciar_observabilidad
+from app import worker
+from app.graph import DecisionSupervisor, compile_graph, set_graph
+from app.hitl import side_effects
+from app.observability import init_observability
+from tests.redis_falso import RedisFalso
 
-iniciar_observabilidad()
+init_observability()
 
 
 class SupervisorGuion:
@@ -27,10 +31,12 @@ class SupervisorGuion:
 
     def __init__(self) -> None:
         self.llamadas = 0
+        self.sistemas: list[str] = []
 
     def invoke(self, mensajes: list[dict[str, str]], *args: object, **kwargs: object) -> DecisionSupervisor:
         self.llamadas += 1
         sistema = mensajes[0]["content"]
+        self.sistemas.append(sistema)
         if "- investigador:" not in sistema:
             return DecisionSupervisor(next="investigador", razon="falta un dato de la empresa")
         if "- analista:" not in sistema:
@@ -75,9 +81,18 @@ def dobles(monkeypatch: pytest.MonkeyPatch) -> tuple[LLMFalso, EspecialistaFalso
 
 
 @pytest.fixture(autouse=True)
-def grafo_en_memoria() -> None:
+def grafo_en_memoria() -> Iterator[None]:
     """Los tests no abren Redis. La compilación de producción, sin argumento, usa RedisSaver."""
-    efectos.clear()
-    usar(compilar(MemorySaver()))
+    side_effects.clear()
+    set_graph(compile_graph(MemorySaver()))
     yield
-    efectos.clear()
+    side_effects.clear()
+
+
+@pytest.fixture
+def redis() -> Iterator[RedisFalso]:
+    falso = RedisFalso()
+    anterior = worker.redis_client
+    worker.redis_client = falso
+    yield falso
+    worker.redis_client = anterior

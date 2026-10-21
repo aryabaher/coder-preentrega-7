@@ -7,7 +7,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
 import modelo
-from app.graph import DecisionSupervisor, estado_inicial, obtener
+from app.graph import DecisionSupervisor, estado_inicial, get_graph
 from errors import (
     ClaveAPIError,
     ConfiguracionError,
@@ -27,7 +27,7 @@ _n = 0
 def _ir(estado: dict) -> dict:
     global _n
     _n += 1
-    return obtener().invoke(estado, {"configurable": {"thread_id": f"err-{_n}"}, "recursion_limit": 25})
+    return get_graph().invoke(estado, {"configurable": {"thread_id": f"err-{_n}"}, "recursion_limit": 25})
 
 
 def _status(codigo: int, clase: type[openai.APIStatusError], texto: str) -> openai.APIStatusError:

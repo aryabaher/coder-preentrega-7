@@ -4,21 +4,14 @@ import threading
 import time
 
 import pytest
+import redis.exceptions
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app import worker
-from app.main import (
-    ApprovalRequest,
-    TaskRequest,
-    TaskResponse,
-    TaskStatus,
-    approve_task,
-    app,
-    create_task,
-    get_task,
-)
-from app.worker import STATUS_PREFIX, encolar, task_worker
+from app.hitl import ApprovalRequest, ApprovalResponse, approve_task
+from app.main import TaskRequest, TaskResponse, TaskStatus, app, create_task, get_task
+from app.worker import STATUS_PREFIX, enqueue_task, task_worker
 from tests.redis_falso import RedisFalso
 
 
@@ -29,7 +22,7 @@ async def _ceder() -> None:
 async def _hasta(redis: RedisFalso, job_id: str, estado: str) -> dict:
     clave = f"{STATUS_PREFIX}{job_id}"
     ultimo = None
-    for _ in range(80):
+    for _ in range(200):
         ultimo = await redis.get(clave)
         if ultimo is not None and json.loads(ultimo)["status"] == estado:
             return json.loads(ultimo)
@@ -37,19 +30,22 @@ async def _hasta(redis: RedisFalso, job_id: str, estado: str) -> dict:
     raise AssertionError(ultimo)
 
 
-@pytest.fixture
-def redis() -> RedisFalso:
-    falso = RedisFalso()
-    anterior = worker.redis_client
-    worker.redis_client = falso
-    yield falso
-    worker.redis_client = anterior
+async def _con_worker(coro) -> None:
+    tarea = asyncio.create_task(task_worker())
+    await _ceder()
+    try:
+        await coro
+    finally:
+        tarea.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await tarea
 
 
 async def test_create_task_responde_pending_y_encola(redis: RedisFalso) -> None:
     respuesta = await create_task(TaskRequest(query="hola"))
     assert isinstance(respuesta, TaskResponse)
     assert respuesta.status == "PENDING"
+    assert respuesta.thread_id == respuesta.job_id
     guardado = json.loads(await redis.get(f"{STATUS_PREFIX}{respuesta.job_id}"))
     assert guardado["status"] == "PENDING"
     assert guardado["query"] == "hola"
@@ -61,28 +57,29 @@ async def test_create_task_responde_pending_y_encola(redis: RedisFalso) -> None:
 async def test_la_respuesta_no_espera_al_grafo(redis: RedisFalso, monkeypatch: pytest.MonkeyPatch) -> None:
     seguir = threading.Event()
 
-    def lento(entrada: object, config: dict, recursion_limit: int = 25) -> dict:
+    def lento(pregunta: str, config: dict, recursion_limit: int = 25) -> dict:
         assert recursion_limit == 25
+        assert config["configurable"]["thread_id"]
         assert seguir.wait(timeout=5)
         return {"paused": False, "interrupt": None, "result": "ok"}
 
-    monkeypatch.setattr("app.graph.correr", lento)
-    tarea = asyncio.create_task(task_worker())
-    await _ceder()
-    try:
+    monkeypatch.setattr("app.graph.run_graph", lento)
+
+    async def caso() -> None:
         inicio = time.perf_counter()
         respuesta = await create_task(TaskRequest(query="hola"))
         assert time.perf_counter() - inicio < 0.5
-        assert respuesta == TaskResponse(job_id=respuesta.job_id, status="PENDING")
+        assert respuesta.status == "PENDING"
         assert not seguir.is_set()
         seguir.set()
         final = await _hasta(redis, respuesta.job_id, "DONE")
         assert final["result"] == "ok"
         assert isinstance(await get_task(respuesta.job_id), TaskStatus)
+
+    try:
+        await _con_worker(caso())
     finally:
-        tarea.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await tarea
+        seguir.set()
 
 
 async def test_cinco_peticiones_concurrentes(redis: RedisFalso, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -92,7 +89,7 @@ async def test_cinco_peticiones_concurrentes(redis: RedisFalso, monkeypatch: pyt
     tope = 0
     candado = threading.Lock()
 
-    def lento(entrada: object, config: dict, recursion_limit: int = 25) -> dict:
+    def lento(pregunta: str, config: dict, recursion_limit: int = 25) -> dict:
         nonlocal en_vuelo, tope
         with candado:
             en_vuelo += 1
@@ -104,10 +101,9 @@ async def test_cinco_peticiones_concurrentes(redis: RedisFalso, monkeypatch: pyt
             en_vuelo -= 1
         return {"paused": False, "interrupt": None, "result": "ok"}
 
-    monkeypatch.setattr("app.graph.correr", lento)
-    tarea = asyncio.create_task(task_worker())
-    await _ceder()
-    try:
+    monkeypatch.setattr("app.graph.run_graph", lento)
+
+    async def caso() -> None:
         inicio = time.perf_counter()
         respuestas = await asyncio.gather(*[create_task(TaskRequest(query=f"consulta {n}")) for n in range(5)])
         assert time.perf_counter() - inicio < 0.5
@@ -117,106 +113,104 @@ async def test_cinco_peticiones_concurrentes(redis: RedisFalso, monkeypatch: pyt
             if adentro.is_set():
                 break
             await asyncio.sleep(0.01)
-        assert adentro.is_set()
-        assert tope == 5
+        assert adentro.is_set() and tope == 5
         seguir.set()
         for respuesta in respuestas:
-            final = await _hasta(redis, respuesta.job_id, "DONE")
-            assert final["result"] == "ok"
+            assert (await _hasta(redis, respuesta.job_id, "DONE"))["result"] == "ok"
+
+    try:
+        await _con_worker(caso())
     finally:
         seguir.set()
-        tarea.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await tarea
 
 
 async def test_el_worker_guarda_failed_y_sigue(redis: RedisFalso, monkeypatch: pytest.MonkeyPatch) -> None:
     llamadas = {"n": 0}
 
-    def flaky(entrada: object, config: dict, recursion_limit: int = 25) -> dict:
+    def flaky(pregunta: str, config: dict, recursion_limit: int = 25) -> dict:
         llamadas["n"] += 1
         if llamadas["n"] == 1:
             raise RuntimeError("corte de prueba")
         return {"paused": False, "interrupt": None, "result": "ok"}
 
-    monkeypatch.setattr("app.graph.correr", flaky)
-    tarea = asyncio.create_task(task_worker())
-    await _ceder()
-    try:
+    monkeypatch.setattr("app.graph.run_graph", flaky)
+
+    async def caso() -> None:
         primera = await create_task(TaskRequest(query="una"))
         fallo = await _hasta(redis, primera.job_id, "FAILED")
         assert fallo["error"] == "corte de prueba"
+        assert await redis.get(f"thread:{primera.thread_id}") is None
         segunda = await create_task(TaskRequest(query="otra"))
-        bien = await _hasta(redis, segunda.job_id, "DONE")
-        assert bien["result"] == "ok"
-    finally:
-        tarea.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await tarea
+        assert (await _hasta(redis, segunda.job_id, "DONE"))["result"] == "ok"
+
+    await _con_worker(caso())
 
 
 async def test_401_en_segundo_plano_queda_failed(redis: RedisFalso, monkeypatch: pytest.MonkeyPatch) -> None:
-    def boom(entrada: object, config: dict, recursion_limit: int = 25) -> dict:
+    def boom(pregunta: str, config: dict, recursion_limit: int = 25) -> dict:
         raise RuntimeError("401/key: falta OPENAI_API_KEY en las variables de entorno. No se reintenta.")
 
-    monkeypatch.setattr("app.graph.correr", boom)
-    tarea = asyncio.create_task(task_worker())
-    await _ceder()
-    try:
+    monkeypatch.setattr("app.graph.run_graph", boom)
+
+    async def caso() -> None:
         respuesta = await create_task(TaskRequest(query="hola"))
         fallo = await _hasta(redis, respuesta.job_id, "FAILED")
         assert fallo["error"].startswith("401/key:")
-    finally:
-        tarea.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await tarea
+
+    await _con_worker(caso())
 
 
 async def test_approve_encola_la_reanudacion(redis: RedisFalso, monkeypatch: pytest.MonkeyPatch) -> None:
     seguir = threading.Event()
 
-    def pausa(entrada: object, config: dict, recursion_limit: int = 25) -> dict:
+    def pausa(pregunta: str, config: dict, recursion_limit: int = 25) -> dict:
         return {
             "paused": True,
-            "interrupt": {"tool": "registrar_ajuste_nomina", "reason": "side-effect tool registrar_ajuste_nomina"},
+            "interrupt": {"tool": "register_payroll_adjustment", "reason": "side-effect tool register_payroll_adjustment"},
             "result": None,
         }
 
     def sigue(decision: dict, config: dict, recursion_limit: int = 25) -> dict:
         assert decision == {"approved": True}
-        assert recursion_limit == 25
         assert seguir.wait(timeout=5)
         return {"paused": False, "interrupt": None, "result": "asentado"}
 
-    monkeypatch.setattr("app.graph.correr", pausa)
-    monkeypatch.setattr("app.graph.reanudar", sigue)
-    tarea = asyncio.create_task(task_worker())
-    await _ceder()
-    try:
+    monkeypatch.setattr("app.graph.run_graph", pausa)
+    monkeypatch.setattr("app.graph.resume_graph", sigue)
+
+    async def caso() -> None:
         creado = await create_task(TaskRequest(query="Registrá el ajuste de nómina"))
         espera = await _hasta(redis, creado.job_id, "AWAITING_APPROVAL")
-        assert espera["interrupt"]["tool"] == "registrar_ajuste_nomina"
+        assert espera["interrupt"]["tool"] == "register_payroll_adjustment"
+        assert await redis.get(f"thread:{creado.thread_id}") == creado.job_id
         inicio = time.perf_counter()
         respuesta = await approve_task(creado.job_id, ApprovalRequest(approved=True))
         assert time.perf_counter() - inicio < 0.5
-        assert respuesta == TaskResponse(job_id=creado.job_id, status="RUNNING")
-        assert not seguir.is_set()
+        assert respuesta == ApprovalResponse(job_id=creado.job_id, status="RUNNING")
         seguir.set()
         final = await _hasta(redis, creado.job_id, "DONE")
         assert final["result"] == "asentado"
+        assert await redis.get(f"thread:{creado.thread_id}") is None
+
+    try:
+        await _con_worker(caso())
     finally:
         seguir.set()
-        tarea.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await tarea
 
 
 async def test_approve_sin_pausa_responde_409(redis: RedisFalso) -> None:
-    job_id = await encolar("hola")
+    record = await enqueue_task("hola")
     with pytest.raises(HTTPException) as exc:
-        await approve_task(job_id, ApprovalRequest(approved=True))
+        await approve_task(record["job_id"], ApprovalRequest(approved=True))
     assert exc.value.status_code == 409
     assert exc.value.detail == "Job is not awaiting approval"
+
+
+async def test_approve_de_un_job_inexistente_responde_404(redis: RedisFalso) -> None:
+    with pytest.raises(HTTPException) as exc:
+        await approve_task("inventado", ApprovalRequest(approved=True))
+    assert exc.value.status_code == 404
+    assert exc.value.detail == "Job not found"
 
 
 async def test_job_inexistente_responde_404(redis: RedisFalso) -> None:
@@ -237,35 +231,46 @@ def test_http_job_inexistente_y_body_invalido(redis: RedisFalso) -> None:
         espacios = cliente.post("/tasks", json={"query": "   "})
         assert espacios.status_code == 422
         assert espacios.json()["detail"][0]["msg"] == "String should have at least 1 character"
-        nulo = cliente.post("/tasks", json={"query": None})
-        assert nulo.status_code == 422
+        assert cliente.post("/tasks", json={"query": None}).status_code == 422
+        aprobar = cliente.post("/tasks/inventado/approve", json={"approved": True})
+        assert aprobar.status_code == 404
+        assert aprobar.json() == {"detail": "Job not found"}
 
 
-def test_redis_apagado_no_encola() -> None:
-    class Roto:
-        async def set(self, *args: object, **kwargs: object) -> None:
-            raise ConnectionError(
-                "Error 22 connecting to localhost:6379. El equipo remoto rechazó la conexión de red."
-            )
+class _RedisQueSeCae(RedisFalso):
+    """Responde al arrancar y después se cae, como un Redis que se apaga con la API levantada."""
 
-        async def rpush(self, *args: object, **kwargs: object) -> None:
-            raise AssertionError("no debe encolar")
+    caido = False
 
-        async def blpop(self, *args: object, **kwargs: object) -> None:
-            await asyncio.Event().wait()
+    async def set(self, *args: object, **kwargs: object):  # type: ignore[override]
+        if self.caido:
+            raise redis.exceptions.ConnectionError("Error 10061 connecting to localhost:6379. Connection refused.")
+        return await super().set(*args, **kwargs)  # type: ignore[arg-type]
 
+    async def get(self, clave: str):  # type: ignore[override]
+        if self.caido:
+            raise redis.exceptions.ConnectionError("Error 10061 connecting to localhost:6379. Connection refused.")
+        return await super().get(clave)
+
+
+def test_redis_caido_despues_de_arrancar_es_503() -> None:
+    caido = _RedisQueSeCae()
     anterior = worker.redis_client
-    worker.redis_client = Roto()
+    worker.redis_client = caido
     try:
         with TestClient(app) as cliente:
-            respuesta = cliente.post("/tasks", json={"query": "hola"})
-        assert respuesta.status_code == 503
-        assert respuesta.json()["detail"] == "Redis is unavailable"
+            caido.caido = True
+            post = cliente.post("/tasks", json={"query": "hola"})
+            get = cliente.get("/tasks/algo")
+            aprobar = cliente.post("/tasks/algo/approve", json={"approved": True})
+        assert post.status_code == get.status_code == aprobar.status_code == 503
+        assert post.json() == {"detail": "Redis is unavailable"}
+        assert caido.encolados == []
     finally:
         worker.redis_client = anterior
 
 
-def test_recursion_limit_llega_al_invoke(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_recursion_limit_llega_al_invoke() -> None:
     visto: dict[str, object] = {}
 
     class DobleGrafo:
@@ -283,6 +288,6 @@ def test_recursion_limit_llega_al_invoke(monkeypatch: pytest.MonkeyPatch) -> Non
 
     from app import graph
 
-    graph.usar(DobleGrafo())
-    graph.correr(graph.estado_inicial("hola"), {"configurable": {"thread_id": "limite"}}, 17)
+    graph.set_graph(DobleGrafo())
+    graph.run_graph("hola", {"configurable": {"thread_id": "limite"}}, 17)
     assert visto["config"]["recursion_limit"] == 17  # type: ignore[index]

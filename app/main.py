@@ -1,6 +1,6 @@
 """FastAPI: POST /tasks enqueues a job_id. GET /tasks/{id} reads Redis and does not block.
 
-POST /tasks/{id}/approve resumes a job paused on interrupt.
+POST /tasks/{id}/approve lives in app/hitl.py. GET /threads/{thread_id} reads the RedisSaver checkpoints.
 """
 
 from requisitos import exigir_python_312
@@ -9,40 +9,45 @@ exigir_python_312()
 
 import asyncio
 import os
+from collections.abc import AsyncIterator, MutableMapping
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
-from redis import asyncio as aioredis
+from redis.exceptions import RedisError
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-from app.observability import iniciar_observabilidad  # noqa: E402
+from app.observability import init_observability  # noqa: E402
 
-iniciar_observabilidad()
+init_observability()
 
-from app import worker  # noqa: E402
-from app.graph import compilar, esta_listo, usar  # noqa: E402
-from app.worker import JobNotFound, NotAwaitingApproval, encolar, encolar_reanudacion, leer  # noqa: E402
+from app import hitl, worker  # noqa: E402
+
+REDIS_ERRORS = (RedisError, ConnectionError, TimeoutError, OSError)
 
 
 class TaskRequest(BaseModel):
-    """Body of POST /tasks. A blank query never reaches the graph."""
+    """Body of POST /tasks. Send the thread_id of a previous task to continue that conversation."""
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
     query: str = Field(min_length=1, max_length=4000)
+    thread_id: str | None = Field(default=None, min_length=1, max_length=200)
 
 
 class TaskResponse(BaseModel):
     job_id: str
     status: str
+    thread_id: str
 
 
 class TaskStatus(BaseModel):
     job_id: str
+    thread_id: str
     status: str
     query: str
     result: str | None = None
@@ -50,70 +55,79 @@ class TaskStatus(BaseModel):
     interrupt: dict[str, object] | None = None
 
 
-class ApprovalRequest(BaseModel):
-    """Body of POST /tasks/{job_id}/approve. approved=false resumes and skips the side effect."""
+class ThreadMessage(BaseModel):
+    role: str
+    name: str | None = None
+    content: str
 
-    approved: bool
+
+class ThreadHistory(BaseModel):
+    thread_id: str
+    messages: list[ThreadMessage]
+
+
+def worker_in_api() -> bool:
+    return os.getenv("WORKER_IN_API", "1") != "0"
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI):
-    if not esta_listo():
-        usar(compilar())
-    if worker.redis_client is None:
-        worker.redis_client = aioredis.from_url(
-            os.getenv("REDIS_URL", "redis://localhost:6379"),
-            decode_responses=True,
-        )
-    tarea = asyncio.create_task(worker.task_worker())
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    await worker.connect()
+    loop_task: asyncio.Task[None] | None = None
+    if worker_in_api():
+        await worker.recover_orphans()
+        loop_task = asyncio.create_task(worker.task_worker())
     try:
         yield
     finally:
-        tarea.cancel()
-        try:
-            await tarea
-        except asyncio.CancelledError:
-            pass
+        if loop_task is not None:
+            loop_task.cancel()
+            try:
+                await loop_task
+            except asyncio.CancelledError:
+                pass
 
 
-app = FastAPI(lifespan=lifespan)
+def skip_api_spans(scope: MutableMapping[str, Any]) -> bool:
+    # Phoenix computes p95 and cost per trace. A 2 ms span per polling GET would be a trace of its own.
+    return str(scope.get("path", "")).startswith(("/tasks", "/threads"))
 
 
-def _redis_caido(exc: BaseException) -> HTTPException:
-    return HTTPException(status_code=503, detail="Redis is unavailable")
+app = FastAPI(lifespan=lifespan, telemetry={"exclude": skip_api_spans})
+app.include_router(hitl.router)
 
 
 @app.post("/tasks", response_model=TaskResponse)
 async def create_task(request: TaskRequest) -> TaskResponse:
     """Enqueue the query and return the ticket. The graph runs in the worker."""
     try:
-        job_id = await encolar(request.query)
-    except (ConnectionError, TimeoutError, OSError) as exc:
-        raise _redis_caido(exc) from exc
-    return TaskResponse(job_id=job_id, status="PENDING")
+        record = await worker.enqueue_task(request.query, request.thread_id)
+    except worker.ThreadBusy as exc:
+        raise HTTPException(status_code=409, detail="Thread is busy") from exc
+    except REDIS_ERRORS as exc:
+        raise HTTPException(status_code=503, detail="Redis is unavailable") from exc
+    return TaskResponse(job_id=record["job_id"], status="PENDING", thread_id=record["thread_id"])
 
 
 @app.get("/tasks/{job_id}", response_model=TaskStatus)
 async def get_task(job_id: str) -> TaskStatus:
     """Current job record. Polling this does not run the agent."""
     try:
-        estado = await leer(job_id)
-    except (ConnectionError, TimeoutError, OSError) as exc:
-        raise _redis_caido(exc) from exc
-    if estado is None:
+        record = await worker.read_job(job_id)
+    except REDIS_ERRORS as exc:
+        raise HTTPException(status_code=503, detail="Redis is unavailable") from exc
+    if record is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    return TaskStatus.model_validate(estado)
+    return TaskStatus.model_validate(record)
 
 
-@app.post("/tasks/{job_id}/approve", response_model=TaskResponse)
-async def approve_task(job_id: str, body: ApprovalRequest) -> TaskResponse:
-    """Resume a job paused on interrupt. Returns without waiting for the graph."""
+@app.get("/threads/{thread_id}", response_model=ThreadHistory)
+async def get_thread(thread_id: str) -> ThreadHistory:
+    """Conversation stored by RedisSaver for that thread_id."""
     try:
-        await encolar_reanudacion(job_id, body.approved)
-    except JobNotFound as exc:
-        raise HTTPException(status_code=404, detail="Job not found") from exc
-    except NotAwaitingApproval as exc:
-        raise HTTPException(status_code=409, detail="Job is not awaiting approval") from exc
-    except (ConnectionError, TimeoutError, OSError) as exc:
-        raise _redis_caido(exc) from exc
-    return TaskResponse(job_id=job_id, status="RUNNING")
+        messages = await worker.read_thread(thread_id)
+    except REDIS_ERRORS as exc:
+        raise HTTPException(status_code=503, detail="Redis is unavailable") from exc
+    if messages is None:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    return ThreadHistory(thread_id=thread_id, messages=[ThreadMessage.model_validate(m) for m in messages])

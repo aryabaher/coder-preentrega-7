@@ -1,93 +1,106 @@
-"""Nodo de aprobación humana: interrupt pausa el grafo hasta POST /tasks/{id}/approve."""
+"""Human approval node: interrupt + endpoint POST /tasks/{id}/approve."""
 
 from __future__ import annotations
 
-import unicodedata
 from typing import Any, Literal
 
-from langchain_core.messages import AIMessage
+from fastapi import APIRouter, HTTPException
+from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from langgraph.types import interrupt
+from pydantic import BaseModel
+from redis.exceptions import RedisError
 
-from agents.texto import texto_de
-from state import AgentState
+from app import worker
 
-# El body de ApprovalRequest manda esta clave. interrupt() la devuelve al reanudar.
-CLAVE_APROBACION = "approved"
+TOOL_NAME = "register_payroll_adjustment"
+SIDE_EFFECT = "side_effect"
+COST = "cost"
 
-MARCAS_CRITICAS = (
-    "registrar_ajuste_nomina",
-    "ajuste de nomina",
-    "registrar ajuste",
-    "efecto secundario",
-    "costo muy alto",
-)
-
-efectos: list[dict[str, str]] = []
+router = APIRouter()
+side_effects: list[dict[str, str]] = []
 
 
-def es_critica(texto: str) -> bool:
-    """True si la tarea pide una herramienta con efectos secundarios o un costo muy alto."""
-    normalizado = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower()
-    return any(marca in normalizado for marca in MARCAS_CRITICAS)
+class ApprovalRequest(BaseModel):
+    """Body of POST /tasks/{job_id}/approve. approved=false resumes and skips the paused step."""
+
+    approved: bool
+
+
+class ApprovalResponse(BaseModel):
+    job_id: str
+    status: str
+
+
+@router.post("/tasks/{job_id}/approve", response_model=ApprovalResponse)
+async def approve_task(job_id: str, body: ApprovalRequest) -> ApprovalResponse:
+    """Resume a job paused on interrupt. Returns without waiting for the graph."""
+    try:
+        await worker.enqueue_resume(job_id, body.approved)
+    except worker.JobNotFound as exc:
+        raise HTTPException(status_code=404, detail="Job not found") from exc
+    except worker.NotAwaitingApproval as exc:
+        raise HTTPException(status_code=409, detail="Job is not awaiting approval") from exc
+    except (RedisError, ConnectionError, TimeoutError, OSError) as exc:
+        raise HTTPException(status_code=503, detail="Redis is unavailable") from exc
+    return ApprovalResponse(job_id=job_id, status="RUNNING")
 
 
 @tool
-def registrar_ajuste_nomina(detalle: str) -> str:
-    """Registra un ajuste de nómina. Efecto secundario: queda asentado y no se deshace."""
-    texto = detalle.strip()
-    if not texto:
-        return "No se registró el ajuste: el detalle está vacío."
-    efectos.append({"herramienta": "registrar_ajuste_nomina", "detalle": texto})
-    return f"Ajuste registrado: {texto}"
+def register_payroll_adjustment(detail: str) -> str:
+    """Register a payroll adjustment. Side effect: it is recorded and cannot be undone."""
+    text = detail.strip()
+    if not text:
+        return "Adjustment not registered: the detail is empty."
+    side_effects.append({"tool": TOOL_NAME, "detail": text})
+    return f"Adjustment registered: {text}"
 
 
-def nodo_aprobacion(state: AgentState) -> dict[str, Any]:
-    """Pausa con interrupt. No corre la herramienta: eso queda del otro lado de la aprobación."""
-    pregunta = texto_de(state["messages"][0].content)
-    decision = interrupt(
-        {
-            "reason": "side-effect tool registrar_ajuste_nomina",
-            "tool": "registrar_ajuste_nomina",
-            "query": pregunta,
+def latest_question(messages: list[BaseMessage]) -> str:
+    """Text of the last human message: the question of the current turn."""
+    for message in reversed(messages):
+        if message.type == "human":
+            content = message.content
+            return content if isinstance(content, str) else str(content)
+    return ""
+
+
+def approval_node(state: dict[str, Any]) -> dict[str, Any]:
+    """Pause with interrupt. Nothing with side effects or extra cost runs before the answer."""
+    reason = state.get("approval_reason") or SIDE_EFFECT
+    question = latest_question(state["messages"])
+    if reason == COST:
+        payload: dict[str, Any] = {
+            "reason": "estimated cost above COSTO_MAXIMO_USD",
+            "estimated_cost_usd": state.get("estimated_cost_usd"),
+            "limit_usd": state.get("cost_limit_usd"),
+            "query": question,
         }
-    )
-    if not _aprobado(decision):
-        aporte = "Rechazado: no se ejecuta registrar_ajuste_nomina."
-        return {
-            "aprobado": False,
-            "next_agent": "FINISH",
-            "messages": [AIMessage(content=aporte, name="aprobacion")],
-            "contribuciones": [{"agente": "aprobacion", "aporte": aporte}],
-        }
-    return {"aprobado": True, "next_agent": "ejecutor"}
+    else:
+        payload = {"reason": f"side-effect tool {TOOL_NAME}", "tool": TOOL_NAME, "query": question}
+    decision = interrupt(payload)
+    approved = _approved(decision)
+    if reason == COST:
+        return {"cost_approved": approved, "next_agent": "supervisor" if approved else "FINISH"}
+    return {"approved": approved, "next_agent": "ejecutor" if approved else "FINISH"}
 
 
-def nodo_ejecutor(state: AgentState) -> dict[str, Any]:
-    """Corre registrar_ajuste_nomina solo si la persona ya aprobó."""
-    if state.get("aprobado") is not True:
-        from errors import DecisionInvalidaError
-
-        raise DecisionInvalidaError(
-            "registrar_ajuste_nomina sin aprobación. El grafo tiene que pasar por interrupt antes."
-        )
-    detalle = texto_de(state["messages"][0].content)
-    resultado = str(registrar_ajuste_nomina.invoke({"detalle": detalle}))
-    return {
-        "messages": [AIMessage(content=resultado, name="ejecutor")],
-        "contribuciones": [{"agente": "ejecutor", "aporte": resultado}],
-        "pasos": state.get("pasos", 0) + 1,
-    }
+def executor_node(state: dict[str, Any]) -> dict[str, Any]:
+    """Run register_payroll_adjustment only after a person approved it."""
+    if state.get("approved") is not True:
+        raise PermissionError(f"{TOOL_NAME} without approval. The graph has to pass through interrupt first.")
+    result = str(register_payroll_adjustment.invoke({"detail": latest_question(state["messages"])}))
+    return {"side_effect_done": True, "side_effect_result": result}
 
 
-def seguir_tras_aprobacion(state: AgentState) -> Literal["ejecutor", "sintesis"]:
-    """La arista crítica: con aprobación sigue la herramienta; si no, cierra sin efecto."""
-    if state.get("aprobado") is True:
-        return "ejecutor"
-    return "sintesis"
+def route_after_approval(state: dict[str, Any]) -> Literal["ejecutor", "supervisor", "sintesis"]:
+    """The critical edge: the side effect only runs when the answer was yes."""
+    if state.get("approval_reason") == COST:
+        return "supervisor" if state.get("cost_approved") is True else "sintesis"
+    return "ejecutor" if state.get("approved") is True else "sintesis"
 
 
-def _aprobado(decision: object) -> bool:
+def _approved(decision: object) -> bool:
     if isinstance(decision, dict):
-        return bool(decision.get(CLAVE_APROBACION))
+        return bool(decision.get("approved"))
     return bool(decision)

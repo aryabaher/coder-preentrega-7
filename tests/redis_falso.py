@@ -1,4 +1,6 @@
 import asyncio
+import fnmatch
+from collections.abc import AsyncIterator
 
 
 class RedisFalso:
@@ -15,13 +17,26 @@ class RedisFalso:
             self._colas[nombre] = asyncio.Queue()
         return self._colas[nombre]
 
-    async def set(self, clave: str, valor: str) -> bool:
+    async def ping(self) -> bool:
+        return True
+
+    async def set(self, clave: str, valor: str, nx: bool = False) -> bool | None:
+        if nx and clave in self.datos:
+            return None
         self.llamadas.append(("set", valor))
         self.datos[clave] = valor
         return True
 
     async def get(self, clave: str) -> str | None:
         return self.datos.get(clave)
+
+    async def delete(self, clave: str) -> int:
+        return 1 if self.datos.pop(clave, None) is not None else 0
+
+    async def scan_iter(self, match: str = "*") -> AsyncIterator[str]:
+        for clave in list(self.datos):
+            if fnmatch.fnmatch(clave, match):
+                yield clave
 
     async def rpush(self, nombre: str, valor: str) -> int:
         self.llamadas.append(("rpush", valor))

@@ -23,13 +23,13 @@ def test_python_311_se_rechaza_con_el_mensaje() -> None:
 
 
 def test_la_guardia_corre_antes_de_importar_el_grafo() -> None:
-    for relativo in ("main.py", "app/main.py"):
+    for relativo in ("main.py", "app/main.py", "app/worker.py"):
         lineas = (RAIZ / relativo).read_text(encoding="utf-8").splitlines()
         guardia = next(i for i, linea in enumerate(lineas) if linea.strip() == "exigir_python_312()")
         posteriores = [
             i
             for i, linea in enumerate(lineas)
-            if "app.graph" in linea or "app.worker" in linea or "uvicorn" in linea
+            if "from app" in linea or "import app" in linea or "uvicorn" in linea or "import asyncio" in linea
         ]
         assert posteriores and guardia < min(posteriores)
 
@@ -38,5 +38,6 @@ def test_el_grafo_no_parsea_en_311_y_el_arranque_si() -> None:
     ast.parse((RAIZ / "requisitos.py").read_text(encoding="utf-8"), feature_version=(3, 11))
     ast.parse((RAIZ / "main.py").read_text(encoding="utf-8"), feature_version=(3, 11))
     ast.parse((RAIZ / "app" / "main.py").read_text(encoding="utf-8"), feature_version=(3, 11))
+    ast.parse((RAIZ / "app" / "worker.py").read_text(encoding="utf-8"), feature_version=(3, 11))
     with pytest.raises(SyntaxError):
         ast.parse((RAIZ / "app" / "graph.py").read_text(encoding="utf-8"), feature_version=(3, 11))

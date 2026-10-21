@@ -4,24 +4,30 @@ red/timeout: no se pudo hablar con el proveedor del LLM. Detalle: TimeoutError: 
 429/cuota: el proveedor limitó las llamadas (rate limit o cuota). Detalle: Exception: rate limit
 Guardia 3.11: Python 3.12+ requerido: app/graph.py usa el alias `type` (PEP 695). Versión actual: 3.11. Creá el venv con `py -3.12 -m venv .venv` (Windows) o `python3.12 -m venv .venv` (Linux/macOS).
 Tarea normal: {'paused': False, 'interrupt': None, 'result': 'En 12 años acumuló 231 días de vacaciones.'}
-Tarea crítica: {'paused': True, 'interrupt': {'reason': 'side-effect tool registrar_ajuste_nomina', 'tool': 'registrar_ajuste_nomina', 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.'}, 'result': None}
-Después de aprobar: False [{'herramienta': 'registrar_ajuste_nomina', 'detalle': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.'}]
+Seguimiento en el mismo hilo: En 12 años acumuló 231 días de vacaciones.
+Historial del hilo demo: [('human', None), ('ai', 'investigador'), ('ai', 'analista'), ('ai', 'supervisor'), ('human', None), ('ai', 'investigador'), ('ai', 'supervisor')]
+Pausa por costo: {'reason': 'estimated cost above COSTO_MAXIMO_USD', 'estimated_cost_usd': 1.0, 'limit_usd': 0.5, 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años?'}
+Costo rechazado, cierra: False
 Worker started
-422 query en blanco:
-{"detail":[{"type":"string_too_short","loc":["body","query"],"msg":"String should have at least 1 character","input":"   ","ctx":{"min_length":1}}]}
-404:
-{"detail":"Job not found"}
+POST /tasks: {'job_id': '4c85b06f-81c0-46ca-bc87-7f4bc2de973b', 'status': 'PENDING', 'thread_id': '4c85b06f-81c0-46ca-bc87-7f4bc2de973b'}
+POST /tasks mismo hilo: {'job_id': 'cbb5d809-9c13-4f4a-b636-bd5ae2df58f0', 'status': 'PENDING', 'thread_id': '4c85b06f-81c0-46ca-bc87-7f4bc2de973b'}
+GET /threads humanos: ['Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años?', '¿Y si en vez de 12 fueran 15 años?']
+404 hilo: 404 Thread not found
+GET en pausa: {"reason": "side-effect tool register_payroll_adjustment", "tool": "register_payroll_adjustment", "query": "Un empleado va a cumplir 12 años en TechCorp. Tuvo 1
+409 hilo ocupado: 409 Thread is busy
+POST approve: {'job_id': '4c4f61e2-7326-416b-af98-beefd8e4a590', 'status': 'RUNNING'}
+GET final: DONE efectos: 1
+409 approve: 409 Job is not awaiting approval
+FAILED: FAILED corte de prueba
+Huérfanos recuperados: ['huerfano']
+Huérfano: worker restarted before the job finished
 Worker started
-503 Redis apagado:
-{"detail":"Redis is unavailable"}
+422 query en blanco: {"detail":[{"type":"string_too_short","loc":["body","query"],"msg":"String should have at least 1 character","input":"   ","ctx":{"min_length":1}}]}
+404 job: {"detail":"Job not found"}
+404 approve: {"detail":"Job not found"}
 Worker started
-POST /tasks: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'PENDING'}
-GET en pausa: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'AWAITING_APPROVAL', 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.', 'result': None, 'error': None, 'interrupt': {'tool': 'registrar_ajuste_nomina', 'reason': 'side-effect tool registrar_ajuste_nomina'}}
-404 approve: 404 Job not found
-POST approve: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'RUNNING'}
-GET final: {'job_id': '84d6f07f-224c-4067-8b77-4a1db91bf1dd', 'status': 'DONE', 'query': 'Un empleado va a cumplir 12 años en TechCorp. Tuvo 14 días de vacaciones los primeros 5 años, 21 los siguientes 5, y ahora tiene derecho a 28. ¿Cuántos días de vacaciones acumuló en total en esos 12 años? Registrá el ajuste de nómina con registrar_ajuste_nomina.', 'result': 'Ajuste registrado.', 'error': None, 'interrupt': None}
-409: 409 Job is not awaiting approval
-FAILED: {'job_id': '3283319e-fb5e-4be9-8ec2-e68f38b94598', 'status': 'FAILED', 'query': 'hola', 'result': None, 'error': 'corte de prueba', 'interrupt': None}
+503 Redis caído después de arrancar: 503 {"detail":"Redis is unavailable"}
+Redis caído al arrancar: Redis is unavailable at redis://localhost:6379. Start it with: docker run -d --name redis-preentrega-7 -p 6379:6379 redis:8
 git ls-files .env *.sqlite:
 (ninguno)
 git check-ignore .env:

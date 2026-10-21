@@ -1,0 +1,98 @@
+== 1. Hilo de dos turnos ==
+$ demo_api.py hilo
+POST /tasks: {"job_id": "eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a", "status": "PENDING", "thread_id": "eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a"}
+Estados vistos por polling: RUNNING -> DONE
+Turno 1: {"status": "DONE", "result": "Los empleados de TechCorp con 5 años de antigüedad tienen derecho a 21 días corridos de vacaciones por año calendario. Por lo tanto, corresponden 21 días de vacaciones por cada uno de esos 5 años."}
+POST /tasks: {"job_id": "31d61112-f060-4017-bb4d-3f801e53e628", "status": "PENDING", "thread_id": "eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a"}
+Estados vistos por polling: PENDING -> RUNNING -> DONE
+Turno 2: {"status": "DONE", "result": "Un empleado de TechCorp acumula un total de 105 días de vacaciones en 5 años de antigüedad, ya que tiene derecho a 21 días corridos de vacaciones por año. La información ha sido confirmada y aprobada según la Política de Vacaciones de TechCorp."}
+GET /threads/eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a: 200
+  [human:-] ¿Cuántos días de vacaciones corresponden con 5 años de antigüedad en TechCorp?
+  [ai:investigador] Los empleados de TechCorp con 5 años de antigüedad tienen derecho a 21 días corridos de vacaciones por año calendario. 
+
+[Fuente: política_v
+  [ai:analista] No puedo buscar información nueva, pero puedo ayudarte a calcular algo relacionado con los días de vacaciones. ¿Qué necesitas calcular?
+  [ai:supervisor] Los empleados de TechCorp con 5 años de antigüedad tienen derecho a 21 días corridos de vacaciones por año calendario. Por lo tanto, corresp
+  [human:-] ¿Y cuántos días acumula en total en esos 5 años?
+  [ai:analista] En total, un empleado de TechCorp acumula 105 días de vacaciones en 5 años de antigüedad.
+  [ai:investigador] Un empleado de TechCorp acumula 14 días de vacaciones por año durante los primeros 5 años de antigüedad. Después de 5 años, el total aumenta
+  [ai:supervisor] Un empleado de TechCorp acumula un total de 105 días de vacaciones en 5 años de antigüedad, ya que tiene derecho a 21 días corridos de vacac
+
+== 2. Tarea crítica en pausa ==
+$ demo_api.py pausar
+POST /tasks: {"job_id": "f805beb9-d35d-44ac-8e16-72387d5899ca", "status": "PENDING", "thread_id": "f805beb9-d35d-44ac-8e16-72387d5899ca"}
+Estados vistos por polling: RUNNING -> AWAITING_APPROVAL
+GET en pausa: {"status": "AWAITING_APPROVAL", "interrupt": {"reason": "side-effect tool register_payroll_adjustment", "tool": "register_payroll_adjustment", "query": "¿Cuántos días de vacaciones corresponden con 5 años de antigüedad? Registrá el ajuste de nómina con register_payroll_adjustment para la legajo 1042."}}
+Guardado en .pausa_pendiente.json. Reiniciá la API y corré: python demo_api.py aprobar
+
+== 3. Lo que quedó en Redis ==
+$ docker exec redis-preentrega-7 redis-cli --scan --pattern checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a*
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:8d7b432b-1527-65cc-32f0-95ae6b282af7:1f1cd326-0b81-69d3-8000-0247b1850ff5
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-c06b-64b7-800d-ab6bb495eba1
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd325-fdbb-637a-bfff-9d285a1e71c5
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-5c75-60c4-8005-1e3dce32284b
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-307b-6e20-8002-374f718be100
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-7095-6755-8008-b053d392caa3
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-5227-64c7-8004-b4ce254591b3
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:3f4bb2a2-66b0-a830-6cac-769098570e40:1f1cd326-47c0-6551-8000-1f8c42a4b7ec
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-7090-6796-8007-9c9e108830ca
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:8d7b432b-1527-65cc-32f0-95ae6b282af7:1f1cd326-151c-6c51-8001-5280a6b16bda
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-9299-64c8-800a-048c5ad1dc3f
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:8d7b432b-1527-65cc-32f0-95ae6b282af7:1f1cd326-0b7c-6ba9-bfff-9ead0e55714a
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:2e76dd8e-8f37-a6ab-72ed-ecf8c0f7f6ad:1f1cd326-b634-6387-8003-f5814e9ac50a
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:3f4bb2a2-66b0-a830-6cac-769098570e40:1f1cd326-47bb-674f-bfff-0368911a3e4a
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:2e76dd8e-8f37-a6ab-72ed-ecf8c0f7f6ad:1f1cd326-9c30-6625-8000-0c290e9fbbb0
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-66e2-66a1-8006-4192a84e7ce9
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-0b72-6f79-8001-2a5483c0cef7
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-47b4-65f3-8003-8a755a5092c8
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:1c976012-0085-1c65-5d4c-64d90bd44efa:1f1cd326-85b8-6c16-8002-b05970b76b4c
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:1c976012-0085-1c65-5d4c-64d90bd44efa:1f1cd326-85b2-69ba-8001-785b8f2e79a6
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-7b4e-6b72-8009-86246e0ce17d
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:2e76dd8e-8f37-a6ab-72ed-ecf8c0f7f6ad:1f1cd326-9c2b-6807-bfff-234b291a0245
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-b6a3-6938-800c-e1b70bca9e21
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:2e76dd8e-8f37-a6ab-72ed-ecf8c0f7f6ad:1f1cd326-ac27-6517-8002-db5f59a45ad4
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:1c976012-0085-1c65-5d4c-64d90bd44efa:1f1cd326-7b58-67b3-8000-db41b2b61382
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:1c976012-0085-1c65-5d4c-64d90bd44efa:1f1cd326-7b53-6995-bfff-ecdaef409453
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd325-fdc2-68b0-8000-74d2f7007a9e
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-cde1-6172-800e-688a897b5838
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:1c976012-0085-1c65-5d4c-64d90bd44efa:1f1cd326-9291-6fae-8003-d65f0de54b5f
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:8d7b432b-1527-65cc-32f0-95ae6b282af7:1f1cd326-259e-695e-8002-821f575ba15f
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:2e76dd8e-8f37-a6ab-72ed-ecf8c0f7f6ad:1f1cd326-a5e4-694b-8001-0bed46af54d3
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:analista:3f4bb2a2-66b0-a830-6cac-769098570e40:1f1cd326-521f-6f8a-8001-09bb9c2b5eb8
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:__empty__:1f1cd326-9c26-69e6-800b-e84e994037db
+checkpoint:eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a:investigador:8d7b432b-1527-65cc-32f0-95ae6b282af7:1f1cd326-3010-67e9-8003-895c88b43709
+(claves checkpoint del hilo eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a: 34)
+$ docker exec redis-preentrega-7 redis-cli GET status:f805beb9-d35d-44ac-8e16-72387d5899ca
+{"job_id": "f805beb9-d35d-44ac-8e16-72387d5899ca", "thread_id": "f805beb9-d35d-44ac-8e16-72387d5899ca", "status": "AWAITING_APPROVAL", "query": "\u00bfCu\u00e1ntos d\u00edas de vacaciones corresponden con 5 a\u00f1os de antig\u00fcedad? Registr\u00e1 el ajuste de n\u00f3mina con register_payroll_adjustment para la legajo 1042.", "result": null, "error": null, "interrupt": {"reason": "side-effect tool register_payroll_adjustment", "tool": "register_payroll_adjustment", "query": "\u00bfCu\u00e1ntos d\u00edas de vacaciones corresponden con 5 a\u00f1os de antig\u00fcedad? Registr\u00e1 el ajuste de n\u00f3mina con register_payroll_adjustment para la legajo 1042."}}
+$ docker exec redis-preentrega-7 redis-cli GET thread:f805beb9-d35d-44ac-8e16-72387d5899ca
+f805beb9-d35d-44ac-8e16-72387d5899ca
+
+== 4. Reinicio de la API (proceso nuevo, sin estado en memoria) ==
+API detenida.
+API levantada de nuevo, pid 46760.
+
+== 5. El hilo se lee desde RedisSaver después del reinicio ==
+$ demo_api.py historial eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a
+GET /threads/eefc0ae4-0bc1-4311-8ffc-b0e6344ef98a: 200
+  [human:-] ¿Cuántos días de vacaciones corresponden con 5 años de antigüedad en TechCorp?
+  [ai:investigador] Los empleados de TechCorp con 5 años de antigüedad tienen derecho a 21 días corridos de vacaciones por año calendario. 
+
+[Fuente: política_v
+  [ai:analista] No puedo buscar información nueva, pero puedo ayudarte a calcular algo relacionado con los días de vacaciones. ¿Qué necesitas calcular?
+  [ai:supervisor] Los empleados de TechCorp con 5 años de antigüedad tienen derecho a 21 días corridos de vacaciones por año calendario. Por lo tanto, corresp
+  [human:-] ¿Y cuántos días acumula en total en esos 5 años?
+  [ai:analista] En total, un empleado de TechCorp acumula 105 días de vacaciones en 5 años de antigüedad.
+  [ai:investigador] Un empleado de TechCorp acumula 14 días de vacaciones por año durante los primeros 5 años de antigüedad. Después de 5 años, el total aumenta
+  [ai:supervisor] Un empleado de TechCorp acumula un total de 105 días de vacaciones en 5 años de antigüedad, ya que tiene derecho a 21 días corridos de vacac
+
+== 6. La pausa sobrevivió: approve después del reinicio ==
+$ demo_api.py aprobar
+GET tras el reinicio: {"status": "AWAITING_APPROVAL", "thread_id": "f805beb9-d35d-44ac-8e16-72387d5899ca"}
+POST /tasks/f805beb9-d35d-44ac-8e16-72387d5899ca/approve: {"job_id": "f805beb9-d35d-44ac-8e16-72387d5899ca", "status": "RUNNING"}
+Estados vistos por polling: RUNNING -> DONE
+GET final: {"status": "DONE", "result": "Con 5 años de antigüedad, corresponde a los empleados un total de **21 días corridos** de vacaciones por año calendario. Además, se ha aprobado y registrado el ajuste de nómina para el legajo **1042**.", "error": null}
+GET /threads/f805beb9-d35d-44ac-8e16-72387d5899ca: 200
+  [human:-] ¿Cuántos días de vacaciones corresponden con 5 años de antigüedad? Registrá el ajuste de nómina con register_payroll_adjustment para la lega
+  [ai:investigador] 1. **Días de vacaciones para 5 años de antigüedad**: Los empleados con 5 años o más, y hasta 10 años, tienen derecho a **21 días corridos** 
+  [ai:analista] Parece que has proporcionado información sobre días de vacaciones y un registro de ajuste de nómina. Si necesitas realizar algún cálculo rel
+  [ai:supervisor] Con 5 años de antigüedad, corresponde a los empleados un total de **21 días corridos** de vacaciones por año calendario. Además, se ha aprob
