@@ -1,9 +1,9 @@
-Clon en limpio en C:\Users\abaher\AppData\Local\Temp\clon-p7-24q29ia2 (sin .env, venv nuevo)
+Clon en limpio en C:\Users\abaher\AppData\Local\Temp\clon-p7-rrf_0rvm (sin .env, venv nuevo)
 $ git clone --depth 1 https://github.com/aryabaher/coder-preentrega-7.git repo
 Cloning into 'repo'...
 (exit 0)
 $ git log -1 --format=%h %s
-e43795c Declarar charset UTF-8 en las respuestas y usar Invoke-RestMethod en los ejemplos de PowerShell
+de66e78 Llamar al analista solo cuando hay una cuenta y regenerar la evidencia con respuestas correctas
 (exit 0)
 $ git ls-files .env
 
@@ -11,13 +11,13 @@ $ git ls-files .env
 $ py -3.12 -m venv .venv
 
 (exit 0)
-$ C:\Users\abaher\AppData\Local\Temp\clon-p7-24q29ia2\repo\.venv\Scripts\python.exe -m pip install -q -r requirements.txt
+$ C:\Users\abaher\AppData\Local\Temp\clon-p7-rrf_0rvm\repo\.venv\Scripts\python.exe -m pip install -q -r requirements.txt
 [notice] A new release of pip is available: 25.0.1 -> 26.2.2
-[notice] To update, run: C:\Users\abaher\AppData\Local\Temp\clon-p7-24q29ia2\repo\.venv\Scripts\python.exe -m pip install --upgrade pip
+[notice] To update, run: C:\Users\abaher\AppData\Local\Temp\clon-p7-rrf_0rvm\repo\.venv\Scripts\python.exe -m pip install --upgrade pip
 (exit 0)
-$ C:\Users\abaher\AppData\Local\Temp\clon-p7-24q29ia2\repo\.venv\Scripts\python.exe -m pytest -q --override-ini addopts= -p no:cacheprovider
+$ C:\Users\abaher\AppData\Local\Temp\clon-p7-rrf_0rvm\repo\.venv\Scripts\python.exe -m pytest -q --override-ini addopts= -p no:cacheprovider
     from langchain_community.document_loaders import DirectoryLoader, TextLoader
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-81 passed, 1 warning in 1.69s
+90 passed, 1 warning in 1.67s
 (exit 0)
