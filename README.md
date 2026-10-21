@@ -37,6 +37,13 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
+> **En cada terminal nueva**, antes de `python ...`, activá el venv. La activación (y `Set-ExecutionPolicy -Scope Process`) vale solo para esa terminal:
+>
+> - Windows: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` y `.\.venv\Scripts\Activate.ps1`
+> - Linux/macOS: `source .venv/bin/activate`
+>
+> El prompt empieza con `(.venv)`. Sin activar, usá el intérprete del venv directo: `.\.venv\Scripts\python.exe main.py` (Windows) o `.venv/bin/python main.py`.
+
 En `.env` cargá `LLM_PROVIDER=openai` y `OPENAI_API_KEY` (con `gpt-4o-mini` Phoenix calcula el costo), y `REDIS_URL=redis://localhost:6379`. `PINECONE_API_KEY` es opcional: si queda vacía, la búsqueda híbrida corre en memoria. `.env` no se versiona.
 
 ### 1. Redis
@@ -49,7 +56,7 @@ docker run -d --name redis-preentrega-7 -p 6379:6379 redis:8
 
 ### 2. Phoenix
 
-En otra terminal, con el mismo entorno:
+En otra terminal, con el venv activado (ver la nota de arriba):
 
 ```text
 python -m phoenix.server.main serve
@@ -59,11 +66,13 @@ El dashboard queda en http://localhost:6006, y el colector, en `http://localhost
 
 ### 3. La API
 
+En otra terminal, con el venv activado (ver la nota de arriba):
+
 ```text
 python main.py
 ```
 
-Con `WORKER_IN_API=1` (el default), el worker corre dentro de la API. Para separarlo, poné `WORKER_IN_API=0` en la API y, en otra terminal, corré `python -m app.worker`. Así lo arma el compose.
+Con `WORKER_IN_API=1` (el default), el worker corre dentro de la API. Para separarlo, poné `WORKER_IN_API=0` en la API y, en otra terminal con el venv activado, corré `python -m app.worker`. Así lo arma el compose.
 
 ### Todo junto con Docker Compose
 
@@ -74,6 +83,8 @@ docker compose up --build
 Levanta cuatro servicios: Redis 8, Phoenix, la API con `WORKER_IN_API=0` y el worker como proceso propio (`python -m app.worker`). La corrida contra el compose está en `evidencias/08-compose.txt`.
 
 ### Chequeo sin clave y sin Redis
+
+Con el venv activado:
 
 ```text
 python validacion.py
@@ -114,13 +125,15 @@ El checkpointer es `RedisSaver`, con `thread_id` en `configurable`. `messages` a
 
 `GET /threads/{thread_id}` lee el historial desde los checkpoints. Como está en Redis, sobrevive a un reinicio de la API (`evidencias/07-redis.txt`). Un hilo que ya tiene un job en curso no acepta otro: responde 409.
 
+La demo, con la API levantada, en otra terminal con el venv activado:
+
 ```text
 python demo_api.py hilo
 ```
 
 ## Cinco peticiones concurrentes
 
-Con Redis, Phoenix y la API levantados:
+Con Redis, Phoenix y la API levantados, en otra terminal con el venv activado:
 
 ```text
 python carga.py
@@ -164,6 +177,8 @@ curl.exe -X POST localhost:8000/tasks/<job_id>/approve -H "Content-Type: applica
 
 El endpoint está en `app/hitl.py`, junto al nodo. Con `approved: true`, el grafo reanuda: corre la herramienta, o sigue trabajando si la pausa fue por costo. Con `approved: false`, reanuda y cierra sin el paso pausado, y la respuesta final dice que se rechazó. El approve también vuelve al instante, con `"status": "RUNNING"`.
 
+La demo, con la API levantada, en otra terminal con el venv activado:
+
 ```text
 python demo_api.py hitl
 python demo_api.py pausar
@@ -204,6 +219,22 @@ La pausa vive en el checkpoint de Redis. Si dejás una tarea en `AWAITING_APPROV
 El `set` de `PENDING` ocurre antes del `rpush`. El grafo corre con `asyncio.to_thread`, así el event loop sigue respondiendo los GET. `recursion_limit` (25 por defecto) llega al `invoke`. Cada cambio de estado queda como evento en la traza `orquestador`.
 
 ## Errores
+
+### Sin el venv activado
+
+Mensaje, al final del traceback:
+
+```text
+  File "...\coder-preentrega-7\app\main.py", line 18, in <module>
+    from fastapi import FastAPI, HTTPException
+ModuleNotFoundError: No module named 'fastapi'
+```
+
+`python` es el intérprete global, que no tiene las dependencias de `requirements.txt`. Pasa en cualquier terminal donde no se activó el venv: la activación no se hereda entre terminales. Si el Python global es anterior a 3.12, en lugar de este error sale el de la guardia (`Python 3.12+ requerido`).
+
+Cómo reproducirlo: abrir una terminal nueva en la carpeta del repo y correr `python main.py` sin activar el venv.
+
+Solución: activar el venv en esa terminal (`.\.venv\Scripts\Activate.ps1` o `source .venv/bin/activate`), o llamar al intérprete del venv directo, con `.\.venv\Scripts\python.exe main.py`.
 
 ### 401/key
 
